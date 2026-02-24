@@ -5,9 +5,13 @@ import { vibeConfig } from "@/lib/vibes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useFavorites } from "@/context/FavoritesContext";
+import { cn } from "@/lib/utils";
 
 const PetProfile = () => {
   const { id } = useParams();
+  const { toggleFavorite, isFavorited } = useFavorites();
+  const favorited = id ? isFavorited(id) : false;
   const pet = mockPets.find((p) => p.id === id);
 
   if (!pet) {
@@ -67,8 +71,8 @@ const PetProfile = () => {
                 {pet.breed} · {pet.age} · {pet.gender === "male" ? "♂" : "♀"}
               </p>
             </div>
-            <Button variant="ghost" size="icon">
-              <Heart className="h-6 w-6 text-accent" />
+            <Button variant="ghost" size="icon" onClick={() => id && toggleFavorite(id)}>
+              <Heart className={cn("h-6 w-6", favorited ? "fill-accent text-accent" : "text-accent")} />
             </Button>
           </div>
 

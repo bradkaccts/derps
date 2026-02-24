@@ -5,25 +5,16 @@ import { PetCard } from "@/components/pets/PetCard";
 import { VibeFilter } from "@/components/pets/VibeFilter";
 import { SpeciesFilter } from "@/components/pets/SpeciesFilter";
 import { SwipeCardStack } from "@/components/pets/SwipeCardStack";
+import { useFavorites } from "@/context/FavoritesContext";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "swipe" | "grid";
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("swipe");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [speciesFilter, setSpeciesFilter] = useState<Species | "all">("all");
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
-
-  const toggleFavorite = (petId: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(petId)) next.delete(petId);
-      else next.add(petId);
-      return next;
-    });
-  };
+  const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
 
   const toggleVibe = (vibe: VibeTag) => {
     setVibeFilters((prev) =>
@@ -40,7 +31,6 @@ const Index = () => {
     });
   }, [speciesFilter, vibeFilters]);
 
-  // For swipe mode, only show available pets not yet swiped
   const swipePets = useMemo(() => {
     return filteredPets.filter(
       (pet) => pet.status === "available" && !favorites.has(pet.id) && !skipped.has(pet.id)
@@ -94,7 +84,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Filters (Grid mode shows all, Swipe mode shows species only) */}
       <div className="mb-4">
         <SpeciesFilter selected={speciesFilter} onSelect={setSpeciesFilter} />
       </div>
@@ -106,12 +95,11 @@ const Index = () => {
         </div>
       )}
 
-      {/* Content */}
       {viewMode === "swipe" ? (
         <SwipeCardStack
           pets={swipePets}
           onSwipeRight={(id) => toggleFavorite(id)}
-          onSwipeLeft={(id) => setSkipped((prev) => new Set(prev).add(id))}
+          onSwipeLeft={(id) => addSkipped(id)}
         />
       ) : filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -120,7 +108,7 @@ const Index = () => {
               key={pet.id}
               pet={pet}
               onFavorite={toggleFavorite}
-              isFavorited={favorites.has(pet.id)}
+              isFavorited={isFavorited(pet.id)}
             />
           ))}
         </div>
