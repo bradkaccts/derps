@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 import Index from "./pages/Index";
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
@@ -19,16 +20,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/pet/:id" element={<PetProfile />} />
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/my-derps" element={<MyDerps />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AppLayout>
+        <FavoritesProvider>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/pet/:id" element={<PetProfile />} />
+              <Route path="/inbox" element={<Inbox />} />
+              <Route path="/my-derps" element={<MyDerps />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        </FavoritesProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
