@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react";
-import { PawPrint, LayoutGrid, Layers } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers, SlidersHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
 import { VibeFilter } from "@/components/pets/VibeFilter";
 import { SpeciesFilter } from "@/components/pets/SpeciesFilter";
 import { SwipeCardStack } from "@/components/pets/SwipeCardStack";
 import { useFavorites } from "@/context/FavoritesContext";
+import { usePreferences } from "@/context/PreferencesContext";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "swipe" | "grid";
@@ -15,6 +18,7 @@ const Index = () => {
   const [speciesFilter, setSpeciesFilter] = useState<Species | "all">("all");
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
+  const { applyPreferences, activeFilterCount } = usePreferences();
 
   const toggleVibe = (vibe: VibeTag) => {
     setVibeFilters((prev) =>
@@ -22,14 +26,16 @@ const Index = () => {
     );
   };
 
+  // Apply preferences first, then page-level filters
   const filteredPets = useMemo(() => {
-    return mockPets.filter((pet) => {
+    const preFiltered = applyPreferences(mockPets);
+    return preFiltered.filter((pet) => {
       if (speciesFilter !== "all" && pet.species !== speciesFilter) return false;
       if (vibeFilters.length > 0 && !vibeFilters.some((v) => pet.vibes.includes(v)))
         return false;
       return true;
     });
-  }, [speciesFilter, vibeFilters]);
+  }, [speciesFilter, vibeFilters, applyPreferences]);
 
   const swipePets = useMemo(() => {
     return filteredPets.filter(
@@ -55,32 +61,47 @@ const Index = () => {
           </div>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center rounded-lg border border-border bg-card p-1">
-          <button
-            onClick={() => setViewMode("swipe")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
-              viewMode === "swipe"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Layers className="h-4 w-4" />
-            <span className="hidden sm:inline">Swipe</span>
-          </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
-              viewMode === "grid"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Grid</span>
-          </button>
+        <div className="flex items-center gap-2">
+          {/* Preferences indicator */}
+          {activeFilterCount > 0 && (
+            <Link
+              to="/profile"
+              className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <Badge variant="default" className="h-5 px-1.5 text-xs">
+                {activeFilterCount}
+              </Badge>
+            </Link>
+          )}
+
+          {/* View Toggle */}
+          <div className="flex items-center rounded-lg border border-border bg-card p-1">
+            <button
+              onClick={() => setViewMode("swipe")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+                viewMode === "swipe"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline">Swipe</span>
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+                viewMode === "grid"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -116,9 +137,17 @@ const Index = () => {
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <span className="text-6xl mb-4">🐾</span>
           <h2 className="text-xl font-bold text-foreground mb-2">No derps found!</h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-2">
             Try adjusting your filters — every derp deserves a chance!
           </p>
+          {activeFilterCount > 0 && (
+            <Link
+              to="/profile"
+              className="text-sm font-semibold text-primary hover:underline"
+            >
+              Update your preferences →
+            </Link>
+          )}
         </div>
       )}
     </div>

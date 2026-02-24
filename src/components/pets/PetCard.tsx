@@ -52,6 +52,7 @@ export function PetCard({ pet, onFavorite, isFavorited = false }: PetCardProps) 
           <Link to={`/pet/${pet.id}`} className="flex-1">
             <h3 className="text-lg font-bold text-foreground">{pet.name}</h3>
             <p className="text-sm text-muted-foreground">{pet.breed} · {pet.age}</p>
+            <p className="text-sm font-bold text-primary">${pet.adoptionFee}</p>
           </Link>
           <Button
             variant="ghost"
