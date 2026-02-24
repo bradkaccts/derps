@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, MessageCircle, Heart, User, PawPrint } from "lucide-react";
+import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home },
@@ -53,9 +54,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
-          </nav>
-        </aside>
-      )}
+            </nav>
+            <div className="mt-auto pt-4">
+              <Button asChild className="w-full gap-2 font-bold">
+                <Link to="/create-listing">
+                  <PlusCircle className="h-4 w-4" />
+                  Rehome a Pet
+                </Link>
+              </Button>
+            </div>
+          </aside>
+        )}
 
       {/* Main Content */}
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
