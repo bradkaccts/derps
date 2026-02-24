@@ -1,12 +1,18 @@
 import { useState, useMemo } from "react";
-import { PawPrint } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers } from "lucide-react";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
 import { VibeFilter } from "@/components/pets/VibeFilter";
 import { SpeciesFilter } from "@/components/pets/SpeciesFilter";
+import { SwipeCardStack } from "@/components/pets/SwipeCardStack";
+import { cn } from "@/lib/utils";
+
+type ViewMode = "swipe" | "grid";
 
 const Index = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>("swipe");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [speciesFilter, setSpeciesFilter] = useState<Species | "all">("all");
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
 
@@ -34,34 +40,80 @@ const Index = () => {
     });
   }, [speciesFilter, vibeFilters]);
 
+  // For swipe mode, only show available pets not yet swiped
+  const swipePets = useMemo(() => {
+    return filteredPets.filter(
+      (pet) => pet.status === "available" && !favorites.has(pet.id) && !skipped.has(pet.id)
+    );
+  }, [filteredPets, favorites, skipped]);
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-6">
-        <PawPrint className="h-7 w-7 text-primary md:hidden" />
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
-            Find Your Derp
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {filteredPets.length} adorable derps looking for a home
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <PawPrint className="h-7 w-7 text-primary md:hidden" />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
+              {viewMode === "swipe" ? "New Arrivals" : "Browse All"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {viewMode === "swipe"
+                ? "Swipe right to heart, left to skip 💕"
+                : `${filteredPets.length} adorable derps looking for a home`}
+            </p>
+          </div>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center rounded-lg border border-border bg-card p-1">
+          <button
+            onClick={() => setViewMode("swipe")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              viewMode === "swipe"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Layers className="h-4 w-4" />
+            <span className="hidden sm:inline">Swipe</span>
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              viewMode === "grid"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Grid</span>
+          </button>
         </div>
       </div>
 
-      {/* Species Filter */}
+      {/* Filters (Grid mode shows all, Swipe mode shows species only) */}
       <div className="mb-4">
         <SpeciesFilter selected={speciesFilter} onSelect={setSpeciesFilter} />
       </div>
 
-      {/* Vibe Filters */}
-      <div className="mb-6">
-        <h3 className="text-sm font-bold text-muted-foreground mb-2">✨ Filter by Vibes</h3>
-        <VibeFilter selected={vibeFilters} onToggle={toggleVibe} />
-      </div>
+      {viewMode === "grid" && (
+        <div className="mb-6">
+          <h3 className="text-sm font-bold text-muted-foreground mb-2">✨ Filter by Vibes</h3>
+          <VibeFilter selected={vibeFilters} onToggle={toggleVibe} />
+        </div>
+      )}
 
-      {/* Pet Grid */}
-      {filteredPets.length > 0 ? (
+      {/* Content */}
+      {viewMode === "swipe" ? (
+        <SwipeCardStack
+          pets={swipePets}
+          onSwipeRight={(id) => toggleFavorite(id)}
+          onSwipeLeft={(id) => setSkipped((prev) => new Set(prev).add(id))}
+        />
+      ) : filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredPets.map((pet) => (
             <PetCard
