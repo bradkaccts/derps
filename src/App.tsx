@@ -12,6 +12,7 @@ import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
 import MyDerps from "./pages/MyDerps";
 import Profile from "./pages/Profile";
+import CreateListing from "./pages/CreateListing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,8 +32,9 @@ const App = () => (
                   <Route path="/pet/:id" element={<PetProfile />} />
                   <Route path="/inbox" element={<Inbox />} />
                   <Route path="/my-derps" element={<MyDerps />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="*" element={<NotFound />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/create-listing" element={<CreateListing />} />
+                <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppLayout>
             </MessagingProvider>
