@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { PreferencesProvider } from "@/context/PreferencesContext";
+import { MessagingProvider } from "@/context/MessagingContext";
 import Index from "./pages/Index";
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
@@ -23,16 +24,18 @@ const App = () => (
       <BrowserRouter>
         <PreferencesProvider>
           <FavoritesProvider>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/pet/:id" element={<PetProfile />} />
-                <Route path="/inbox" element={<Inbox />} />
-                <Route path="/my-derps" element={<MyDerps />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AppLayout>
+            <MessagingProvider>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/pet/:id" element={<PetProfile />} />
+                  <Route path="/inbox" element={<Inbox />} />
+                  <Route path="/my-derps" element={<MyDerps />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AppLayout>
+            </MessagingProvider>
           </FavoritesProvider>
         </PreferencesProvider>
       </BrowserRouter>

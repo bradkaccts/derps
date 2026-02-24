@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { Home, MessageCircle, Heart, User, PawPrint } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMessaging } from "@/context/MessagingContext";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home },
@@ -14,6 +15,7 @@ const navItems = [
 export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { totalUnread } = useMessaging();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -29,6 +31,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
+              const showBadge = item.path === "/inbox" && totalUnread > 0;
               return (
                 <Link
                   key={item.path}
@@ -42,6 +45,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
+                  {showBadge && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold animate-wag">
+                      {totalUnread}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -57,16 +65,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 safe-bottom">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const showBadge = item.path === "/inbox" && totalUnread > 0;
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-semibold transition-colors",
+                  "relative flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-semibold transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive && "animate-wag")} />
+                <div className="relative">
+                  <item.icon className={cn("h-5 w-5", isActive && "animate-wag")} />
+                  {showBadge && (
+                    <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[10px] font-bold animate-wag">
+                      {totalUnread}
+                    </span>
+                  )}
+                </div>
                 {item.label}
               </Link>
             );
