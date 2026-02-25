@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle } from "lucide-react";
+import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
@@ -55,6 +55,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
               );
             })}
             </nav>
+            <div className="mt-4 space-y-2">
+              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                <Link to="/my-applications">
+                  <ClipboardList className="h-4 w-4" />
+                  My Applications
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                <Link to="/applications-inbox">
+                  <Inbox className="h-4 w-4" />
+                  Applicant Inbox
+                </Link>
+              </Button>
+            </div>
             <div className="mt-auto pt-4">
               <Button asChild className="w-full gap-2 font-bold">
                 <Link to="/create-listing">
