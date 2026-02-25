@@ -1,18 +1,26 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Heart, MapPin, ShieldCheck, ClipboardList } from "lucide-react";
 import { mockPets } from "@/data/mock-pets";
 import { vibeConfig } from "@/lib/vibes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useApplications } from "@/context/ApplicationContext";
+import { currentUser } from "@/data/mock-users";
+import { AdoptionForm } from "@/components/applications/AdoptionForm";
+import { ApplicationStatusTracker } from "@/components/applications/ApplicationStatusTracker";
 import { cn } from "@/lib/utils";
 
 const PetProfile = () => {
   const { id } = useParams();
   const { toggleFavorite, isFavorited } = useFavorites();
+  const { getApplicationForPetByAdopter } = useApplications();
+  const [formOpen, setFormOpen] = useState(false);
   const favorited = id ? isFavorited(id) : false;
   const pet = mockPets.find((p) => p.id === id);
+  const existingApp = pet ? getApplicationForPetByAdopter(pet.id, currentUser.id) : undefined;
 
   if (!pet) {
     return (
@@ -129,12 +137,24 @@ const PetProfile = () => {
             <p className="text-sm text-foreground">{pet.rehomingReason}</p>
           </div>
 
-          {/* Apply Button */}
-          <div className="sticky bottom-20 md:bottom-4">
-            <Button className="w-full h-12 text-base font-bold rounded-xl">
-              🐾 Apply to Adopt {pet.name}
-            </Button>
+          {/* Application Status or Apply Button */}
+          <div className="sticky bottom-20 md:bottom-4 space-y-3">
+            {existingApp ? (
+              <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <ClipboardList className="h-4 w-4" />
+                  Your Application
+                </div>
+                <ApplicationStatusTracker status={existingApp.status} />
+              </div>
+            ) : (
+              <Button onClick={() => setFormOpen(true)} className="w-full h-12 text-base font-bold rounded-xl">
+                🐾 Apply to Adopt {pet.name}
+              </Button>
+            )}
           </div>
+
+          {pet && <AdoptionForm pet={pet} open={formOpen} onOpenChange={setFormOpen} />}
         </div>
       </div>
     </div>
