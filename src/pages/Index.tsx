@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PawPrint, LayoutGrid, Layers, SlidersHorizontal } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
@@ -132,6 +132,15 @@ const Index = () => {
               isFavorited={isFavorited(pet.id)}
             />
           ))}
+          {/* Rehome CTA card */}
+          <Link
+            to="/create-listing"
+            className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center transition-colors hover:border-primary/60 hover:bg-primary/10"
+          >
+            <PlusCircle className="h-10 w-10 text-primary" />
+            <span className="text-lg font-bold text-foreground">Rehome a Pet</span>
+            <span className="text-sm text-muted-foreground">List your pet and find them a loving home</span>
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-20 text-center">
