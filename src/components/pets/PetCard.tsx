@@ -6,7 +6,7 @@ import { type Pet } from "@/data/mock-pets";
 import { vibeConfig } from "@/lib/vibes";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface PetCardProps {
   pet: Pet;
@@ -16,6 +16,14 @@ interface PetCardProps {
 
 export function PetCard({ pet, onFavorite, isFavorited = false }: PetCardProps) {
   const [hovered, setHovered] = useState(false);
+  const [heartPop, setHeartPop] = useState(false);
+
+  const handleFavorite = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setHeartPop(true);
+    onFavorite?.(pet.id);
+    setTimeout(() => setHeartPop(false), 400);
+  }, [onFavorite, pet.id]);
 
   return (
     <Card
@@ -57,16 +65,14 @@ export function PetCard({ pet, onFavorite, isFavorited = false }: PetCardProps) 
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={(e) => {
-              e.preventDefault();
-              onFavorite?.(pet.id);
-            }}
+            className="h-8 w-8 shrink-0 btn-bouncy"
+            onClick={handleFavorite}
           >
             <Heart
               className={cn(
                 "h-5 w-5 transition-colors",
-                isFavorited ? "fill-accent text-accent" : "text-muted-foreground"
+                isFavorited ? "fill-accent text-accent" : "text-muted-foreground",
+                heartPop && "animate-heart-pop"
               )}
             />
           </Button>
