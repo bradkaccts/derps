@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ConfettiExplosion } from "@/components/ui/confetti";
 import { ShieldCheck, Star, Eye, ThumbsUp, XCircle, Inbox } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Application, ScreeningAnswers } from "@/context/ApplicationContext";
+import { Application } from "@/context/ApplicationContext";
 
 const statusColor: Record<ApplicationStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -23,6 +24,14 @@ const statusColor: Record<ApplicationStatus, string> = {
 const RehomerApplications = () => {
   const { applications, updateStatus } = useApplications();
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const handleStatusChange = useCallback((appId: string, status: ApplicationStatus) => {
+    updateStatus(appId, status);
+    if (status === "approved") {
+      setShowConfetti(true);
+    }
+  }, [updateStatus]);
 
   // For the demo, show all applications (a real app would filter by current rehomer)
   const rehomerApps = applications;
@@ -45,7 +54,9 @@ const RehomerApplications = () => {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-4">
+    <>
+      {showConfetti && <ConfettiExplosion onComplete={() => setShowConfetti(false)} />}
+      <div className="max-w-3xl mx-auto p-4 space-y-4">
       <h1 className="text-2xl font-extrabold text-foreground">Applicant Inbox</h1>
       <p className="text-sm text-muted-foreground">Review adoption applications for your listed pets.</p>
 
@@ -93,7 +104,7 @@ const RehomerApplications = () => {
                       variant={a.variant}
                       size="sm"
                       className="gap-1"
-                      onClick={() => updateStatus(app.id, a.status)}
+                      onClick={() => handleStatusChange(app.id, a.status)}
                     >
                       <a.icon className="h-3.5 w-3.5" />
                       {a.label}
@@ -125,6 +136,7 @@ const RehomerApplications = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 };
 

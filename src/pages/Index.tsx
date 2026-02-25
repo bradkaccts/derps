@@ -3,6 +3,7 @@ import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle } from "luc
 import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
+import { DerpyEmpty } from "@/components/ui/derpy-states";
 import { VibeFilter } from "@/components/pets/VibeFilter";
 import { SpeciesFilter } from "@/components/pets/SpeciesFilter";
 import { SwipeCardStack } from "@/components/pets/SwipeCardStack";
@@ -123,7 +124,7 @@ const Index = () => {
           onSwipeLeft={(id) => addSkipped(id)}
         />
       ) : filteredPets.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
           {filteredPets.map((pet) => (
             <PetCard
               key={pet.id}
@@ -135,7 +136,7 @@ const Index = () => {
           {/* Rehome CTA card */}
           <Link
             to="/create-listing"
-            className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center transition-colors hover:border-primary/60 hover:bg-primary/10"
+            className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center transition-all hover:border-primary/60 hover:bg-primary/10 btn-bouncy"
           >
             <PlusCircle className="h-10 w-10 text-primary" />
             <span className="text-lg font-bold text-foreground">Rehome a Pet</span>
@@ -143,21 +144,19 @@ const Index = () => {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <span className="text-6xl mb-4">🐾</span>
-          <h2 className="text-xl font-bold text-foreground mb-2">No derps found!</h2>
-          <p className="text-muted-foreground mb-2">
-            Try adjusting your filters — every derp deserves a chance!
-          </p>
+        <DerpyEmpty
+          title="No derps found!"
+          message="Try adjusting your filters — every derp deserves a chance!"
+        >
           {activeFilterCount > 0 && (
             <Link
               to="/profile"
-              className="text-sm font-semibold text-primary hover:underline"
+              className="text-sm font-semibold text-primary hover:underline mt-2"
             >
               Update your preferences →
             </Link>
           )}
-        </div>
+        </DerpyEmpty>
       )}
     </div>
   );

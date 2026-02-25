@@ -6,6 +6,7 @@ import { vibeConfig } from "@/lib/vibes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DerpyEmpty } from "@/components/ui/derpy-states";
 import { Link } from "react-router-dom";
 
 interface SwipeCardStackProps {
@@ -35,13 +36,11 @@ export function SwipeCardStack({ pets, onSwipeRight, onSwipeLeft }: SwipeCardSta
 
   if (currentIndex >= pets.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <span className="text-6xl mb-4">🎉</span>
-        <h2 className="text-xl font-bold text-foreground mb-2">You've seen all the derps!</h2>
-        <p className="text-muted-foreground mb-4">
-          Check your shortlist or switch to Browse All for more.
-        </p>
-      </div>
+      <DerpyEmpty
+        title="You've seen all the derps!"
+        message="Check your shortlist or switch to Browse All for more."
+        emoji="🎉"
+      />
     );
   }
 
@@ -71,7 +70,7 @@ export function SwipeCardStack({ pets, onSwipeRight, onSwipeLeft }: SwipeCardSta
         <Button
           variant="outline"
           size="icon"
-          className="h-14 w-14 rounded-full border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+          className="h-14 w-14 rounded-full border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground btn-bouncy"
           onClick={() => handleSwipe("left")}
         >
           <X className="h-7 w-7" />
@@ -79,7 +78,7 @@ export function SwipeCardStack({ pets, onSwipeRight, onSwipeLeft }: SwipeCardSta
         <Button
           variant="outline"
           size="icon"
-          className="h-14 w-14 rounded-full border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all"
+          className="h-14 w-14 rounded-full border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground btn-bouncy"
           onClick={() => handleSwipe("right")}
         >
           <Heart className="h-7 w-7" />
