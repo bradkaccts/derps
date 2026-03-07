@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, X, MapPin, ShieldCheck, Columns2, LayoutGrid } from "lucide-react";
+import { Heart, X, MapPin, ShieldCheck, Columns2, LayoutGrid, HeartHandshake } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
+import { usePlaydates } from "@/context/PlaydateContext";
 import { vibeConfig } from "@/lib/vibes";
+import { mockPets, type Pet } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { type Pet } from "@/data/mock-pets";
 
 type ViewMode = "grid" | "compare";
 
 const MyDerps = () => {
   const { favoritePets, toggleFavorite, removeFavorite, isFavorited } = useFavorites();
+  const { requests } = usePlaydates();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
