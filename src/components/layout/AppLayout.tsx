@@ -95,7 +95,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <Button asChild className="w-full gap-2 font-bold">
                 <Link to="/create-listing">
                   <PlusCircle className="h-4 w-4" />
-                  Rehome a Pet
+                  Rehome a Derp
                 </Link>
               </Button>
             </div>
