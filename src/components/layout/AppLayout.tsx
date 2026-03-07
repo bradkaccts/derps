@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox } from "lucide-react";
+import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
+import { usePlaydates } from "@/context/PlaydateContext";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -17,6 +18,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { totalUnread } = useMessaging();
+  const { pendingCount } = usePlaydates();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -69,6 +71,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Link>
               </Button>
             </div>
+
+            {/* Playdates quick link */}
+            <div className="mt-4">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full gap-2 font-semibold justify-start relative"
+              >
+                <Link to="/?view=playdates">
+                  <HeartHandshake className="h-4 w-4" />
+                  Playdates
+                  {pendingCount > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold animate-wag">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+            </div>
+
             <div className="mt-auto pt-4">
               <Button asChild className="w-full gap-2 font-bold">
                 <Link to="/create-listing">

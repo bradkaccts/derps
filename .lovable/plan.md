@@ -1,105 +1,147 @@
 
 
-# Pet Dating / Meet & Greet Feature — Enhancement Plan
+# 🐾 Derps MVP — Implementation Plan
 
-## Concept
+## Overview
+A fun, family-friendly pet adoption platform with a whimsical "Derps" aesthetic. This MVP focuses on **discovery, profiles, messaging, and all three user roles** — built frontend-only with rich mock data so we can rapidly iterate on UX and design.
 
-Transform the existing pet discovery into a **"Pet Playdates"** matching system where pet owners can find compatible pets for their own pets to meet. This adds a social/community layer on top of the adoption flow — think "Tinder for pets to make friends."
+---
 
-## Key Enhancements
+## 1. Design System & Branding
+- **Color palette**: Warm creams (`#FFF8F0`), sage greens, terracotta accents — organic and approachable
+- **Typography**: Rounded sans-serif fonts (e.g., Nunito) for a friendly feel
+- **Micro-interactions**: Subtle "wiggle" on pet card hover, bouncy button animations, playful loading states
+- **Icons**: Custom Vibe icons — Sleeping Moon (low energy), Soccer Ball (high energy), Shield (good with other pets), Paw (kid-friendly)
 
-### 1. Pet Compatibility Matching Engine (`src/lib/matching.ts`)
-Replace the current random compatibility score with a real algorithm that scores pet-to-pet matches based on:
-- **Vibe overlap** — shared personality tags (playful + playful = great match)
-- **Species compatibility** — same species or cross-species friendliness (pets with `good-with-pets` vibe)
-- **Location proximity** — closer = higher score
-- **Energy level alignment** — high-energy pairs with high-energy, not low-energy
-- **Age compatibility** — similar age categories score higher
+---
 
-The function returns a 0-100 score plus a fun label ("Perfect Playdate!", "Worth a Sniff", "Unlikely Pals").
+## 2. Pages & Navigation
 
-### 2. "My Pet" Profile Selection
-Currently the app has a `currentUser` but no concept of "the user's own pet." To enable pet-to-pet matching:
-- Add a **"Your Derps"** section to the Profile page where the user can register their own pet(s) — either by selecting from their rehoming listings or creating a quick mini-profile (name, species, vibes, photo)
-- Store in a new `MyPetsContext` with a selectable "active pet" for matching
-- Mock data: give Felix (the default adopter) a pet so the feature works immediately
+### Mobile: Bottom Tab Bar
+- **Home** (Discovery Feed), **Inbox**, **My Derps**, **Profile**
 
-### 3. New "Playdates" Discovery Tab
-Add a third view mode on the Home page alongside Swipe/Grid:
-- **Playdates mode** (icon: `Heart` with `Users`) — shows pets ranked by compatibility with the user's active pet
-- Each card displays: match score badge, shared vibes highlighted, distance, and a "Request Playdate" button
-- Swipe-right in this mode sends a playdate request instead of a favorite
+### Desktop: Left Sidebar Navigation
+- Same sections with expanded labels and an Admin panel link for admin users
 
-### 4. Playdate Request Flow
-- New `PlaydateContext` managing playdate requests with statuses: `requested → accepted → scheduled → completed`
-- When a playdate is accepted, it unlocks the existing Meet & Greet scheduler in messaging
-- Add a "Playdates" tab in the Inbox to separate playdate conversations from adoption conversations
+---
 
-### 5. Pet Profile Enhancements
-On `PetProfile.tsx`:
-- Replace the random compatibility score with the real matching score (pet-to-pet if user has a pet, or pet-to-preferences if not)
-- Add a **"Playdate Match"** card showing vibe overlap visualization (shared vibes highlighted in green)
-- Add a "Request Playdate 🐾" button alongside the existing "Apply to Adopt" button
+## 3. Discovery Feed (Home)
 
-### 6. Navigation & UI Updates
-- Add a **"Playdates"** nav item to sidebar and mobile tab bar (or integrate as a badge/tab on the Home page)
-- Add playdate request count badge similar to the unread messages badge
-- On `MyDerps` page, add a section showing "Upcoming Playdates" with scheduled meet-and-greets
+### Swipe Mode ("New Arrivals")
+- Tinder-style card stack for newly listed pets
+- Swipe right to "heart" → adds to Family Shortlist
+- Swipe left to skip
+- Cards show: pet photo/video, name, species, top Vibe tags, location radius
 
-## Files to Create
-| File | Purpose |
-|------|---------|
-| `src/lib/matching.ts` | Compatibility scoring algorithm |
-| `src/context/MyPetsContext.tsx` | User's own pets state + active pet selection |
-| `src/context/PlaydateContext.tsx` | Playdate request management |
-| `src/components/pets/PlaydateCard.tsx` | Pet card variant showing match score + request button |
-| `src/components/pets/MatchScoreBadge.tsx` | Animated circular match percentage badge |
-| `src/pages/Playdates.tsx` | Dedicated playdates discovery/management page |
+### Grid Mode ("Browse All")
+- Multi-column responsive grid (1 col mobile, 3-4 cols desktop)
+- **Vibe Filters** as large tappable icons (not dropdowns) — kid-friendly
+- Additional filters: species, distance radius, age range
+- Toggle between Swipe and Grid views
 
-## Files to Modify
-| File | Change |
-|------|--------|
-| `src/pages/Index.tsx` | Add "Playdates" view mode tab |
-| `src/pages/PetProfile.tsx` | Real compatibility score, playdate request button |
-| `src/pages/Profile.tsx` | "My Pets" section for registering user's pet |
-| `src/pages/MyDerps.tsx` | Upcoming playdates section |
-| `src/pages/Inbox.tsx` | Playdates tab in messaging |
-| `src/components/layout/AppLayout.tsx` | Playdates nav item or badge |
-| `src/App.tsx` | Add MyPetsProvider, PlaydateProvider, /playdates route |
-| `src/data/mock-pets.ts` | Add a pet owned by the current user for demo |
+---
 
-## Matching Algorithm Sketch
+## 4. Pet Profile Page
 
-```text
-Score Weights:
-  Vibe overlap        → 35%  (shared vibes / total unique vibes)
-  Energy alignment    → 20%  (same energy tier = full, adjacent = half)
-  Species compat      → 15%  (same species or good-with-pets = full)
-  Location proximity  → 20%  (inverse of distance, capped at 50km)
-  Age compatibility   → 10%  (same category = full, adjacent = half)
+### Mobile
+- Full-width photo/video gallery (swipeable) at top
+- Pet name, species, age, Vibe tags as colorful badges
+- "Verified Health Badge" indicator
+- Compatibility Meter (visual bar comparing pet traits to user preferences)
+- Bio section (with personality and quirky fun facts)
+- Rehoming reason (displayed empathetically)
+- Sticky "Apply to Adopt" button at bottom
 
-Labels:
-  90-100  → "Perfect Playdate! 💕"
-  70-89   → "Great Match! 🎾"
-  50-69   → "Worth a Sniff 👃"
-  <50     → "Unlikely Pals 🤷"
-```
+### Desktop
+- Split-screen: media gallery left, sticky details + Apply button right
 
-## UX Flow Summary
+---
 
-```text
-Profile → Register "My Pet" (name, species, vibes, photo)
-  ↓
-Home → Switch to "Playdates" tab
-  ↓
-See pets ranked by compatibility with your pet
-  ↓
-Swipe right or tap "Request Playdate"
-  ↓
-Owner receives request in Inbox (Playdates tab)
-  ↓
-Accept → Meet & Greet scheduler unlocks
-  ↓
-Schedule, meet, check-in → confetti 🎉
-```
+## 5. User Profiles & Roles
+
+### Adopter Profile
+- Name, location (radius only), home type, family size
+- Preferences (species, energy level, yard availability)
+- Photo gallery of home environment
+- "Trust Score" badge (mock value for MVP)
+- Favorites / Family Shortlist
+
+### Rehomer Profile
+- Same base profile + ability to create Pet Listings
+- Listing management: view applications, change pet status
+- "Verified Rehomer" badge
+
+### Admin Dashboard
+- User management: view accounts, flag/suspend
+- Pet listing moderation queue
+- Dispute overview (placeholder UI for future escrow disputes)
+- Simple stats: total users, active listings, pending applications
+
+---
+
+## 6. Pet Listing Creation (Rehomer Flow)
+- Step-by-step wizard:
+  1. **Species & basics** (name, age, breed/type)
+  2. **Vibes** — select personality tags from icon grid
+  3. **Photos/Videos** — upload media (mock upload in MVP)
+  4. **Rehoming reason** — empathetic category selector + optional story
+  5. **Review & Publish**
+- AI "Bio Generator" button — generates a fun, quirky pet bio (mock/placeholder)
+
+---
+
+## 7. Application Flow
+
+### Adopter Side
+- "Apply to Adopt" → short form with screening questions
+- Application status tracker: Draft → Submitted → Under Review → Shortlisted → Approved / Declined
+- Notification when status changes
+
+### Rehomer Side
+- Application inbox per pet listing
+- View adopter's Trust Score, home profile, and screening answers
+- Actions: Shortlist, Accept for Chat, Decline
+- "Pet Personality Quiz" — send a fun quiz to applicants (mock)
+
+---
+
+## 8. In-App Messaging (Inbox)
+- Consent-based: chat only unlocks after application is "Accepted for Chat"
+- Conversation list with pet context (which pet the chat is about)
+- Meet-and-Greet scheduler — pick a date/time directly in chat
+- Both parties can "Check-in" to confirm the meeting happened
+- Messages are mock/local state for MVP
+
+---
+
+## 9. Family Shortlist ("My Derps")
+- Shared favorites board
+- Heart pets from Swipe or Grid to add
+- Side-by-side comparison view on desktop
+- Family member avatars showing who favorited what
+
+---
+
+## 10. Fun "Derp" Touches
+- **"Gotcha Day" countdown** — celebratory confetti animation when adoption is marked complete
+- **Playful empty states** — cartoon derpy animals when no results found
+- **"Wag" notification style** — bouncy animation on new message badges
+- **Branded security section** — "Doghouse Rules" instead of "Security Settings"
+
+---
+
+## 11. Mock Data
+- ~15-20 pre-built pet profiles across species (dogs, cats, birds, reptiles)
+- 3-4 sample user profiles matching the personas (Felix, Fiona, Paul)
+- Sample applications in various statuses
+- Sample chat conversations
+
+---
+
+## Tech Approach
+- React + TypeScript with React Router for multi-page navigation
+- Tailwind CSS with custom Derps design tokens
+- Shadcn/UI components customized to the warm aesthetic
+- Framer Motion or CSS animations for micro-interactions
+- All data in local state/mock — ready to connect Supabase later
 
