@@ -153,6 +153,42 @@ const MyDerps = () => {
           )}
         </div>
       )}
+
+      {/* Upcoming Playdates */}
+      {requests.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <HeartHandshake className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-extrabold text-foreground">Playdate Requests</h2>
+            <Badge variant="secondary" className="text-xs">{requests.length}</Badge>
+          </div>
+          <div className="space-y-2">
+            {requests.map((req) => {
+              const pet = mockPets.find((p) => p.id === req.targetPetId);
+              if (!pet) return null;
+              return (
+                <Link
+                  key={req.id}
+                  to={`/pet/${pet.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/30 transition-all"
+                >
+                  <img src={pet.photos[0]} alt={pet.name} className="h-12 w-12 rounded-full object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-foreground">{pet.name}</span>
+                    <p className="text-xs text-muted-foreground">{pet.breed}</p>
+                  </div>
+                  <Badge
+                    variant={req.status === "accepted" ? "default" : "secondary"}
+                    className="capitalize text-xs"
+                  >
+                    {req.status}
+                  </Badge>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
