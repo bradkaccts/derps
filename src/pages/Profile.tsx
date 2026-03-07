@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { currentUser } from "@/data/mock-users";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +7,14 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ShieldCheck, RotateCcw, SlidersHorizontal, PawPrint, X, Plus } from "lucide-react";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useMyPets, type MyPet } from "@/context/MyPetsContext";
 import { type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
 import { vibeConfig, allVibes } from "@/lib/vibes";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const speciesOptions: { value: Species; label: string; emoji: string }[] = [
   { value: "dog", label: "Dogs", emoji: "🐕" },
@@ -70,6 +74,40 @@ function toggleInArray<T>(arr: T[], item: T): T[] {
 const Profile = () => {
   const { preferences, updatePreferences, resetPreferences, activeFilterCount } =
     usePreferences();
+  const { myPets, activePet, setActivePetId, addMyPet, removeMyPet } = useMyPets();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newPetName, setNewPetName] = useState("");
+  const [newPetSpecies, setNewPetSpecies] = useState<Species>("dog");
+  const [newPetBreed, setNewPetBreed] = useState("");
+  const [newPetAge, setNewPetAge] = useState<AgeCategory>("adult");
+  const [newPetVibes, setNewPetVibes] = useState<VibeTag[]>([]);
+
+  const handleAddPet = () => {
+    if (!newPetName.trim()) {
+      toast.error("Give your pet a name!");
+      return;
+    }
+    addMyPet({
+      name: newPetName.trim(),
+      species: newPetSpecies,
+      breed: newPetBreed.trim() || "Mixed",
+      age: ageOptions.find((a) => a.value === newPetAge)?.label + " " + newPetSpecies || "",
+      ageCategory: newPetAge,
+      gender: "male",
+      vibes: newPetVibes.length > 0 ? newPetVibes : ["playful"],
+      bio: "",
+      funFact: "",
+      location: currentUser.location,
+      distanceKm: 0,
+      photos: ["https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop"],
+      healthVerified: true,
+    });
+    toast.success(`${newPetName} added! Now find them some friends 🐾`);
+    setShowAddForm(false);
+    setNewPetName("");
+    setNewPetBreed("");
+    setNewPetVibes([]);
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
@@ -122,6 +160,132 @@ const Profile = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Separator />
+
+      {/* My Pets / Playdates Section */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <PawPrint className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-extrabold text-foreground">Your Derps</h2>
+          <Badge variant="secondary" className="text-xs">{myPets.length}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Register your pets to find playdate matches! The active pet is used for compatibility scoring.
+        </p>
+
+        {/* Pet list */}
+        <div className="space-y-2 mb-4">
+          {myPets.map((pet) => (
+            <div
+              key={pet.id}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-all",
+                activePet?.id === pet.id
+                  ? "border-primary bg-primary/5"
+                  : "border-border bg-card hover:border-primary/30"
+              )}
+              onClick={() => setActivePetId(pet.id)}
+            >
+              <img src={pet.photos[0]} alt={pet.name} className="h-12 w-12 rounded-full object-cover" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-foreground">{pet.name}</span>
+                  {activePet?.id === pet.id && (
+                    <Badge variant="default" className="text-[10px] px-1.5">Active</Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground truncate">
+                  {pet.breed} · {pet.vibes.slice(0, 2).map((v) => vibeConfig[v]?.icon).join(" ")}
+                </p>
+              </div>
+              {myPets.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeMyPet(pet.id);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add pet form */}
+        {showAddForm ? (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <h3 className="font-bold text-foreground text-sm">Add a new derp</h3>
+              <Input
+                placeholder="Pet name"
+                value={newPetName}
+                onChange={(e) => setNewPetName(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-2">
+                {speciesOptions.map((opt) => (
+                  <ToggleChip
+                    key={opt.value}
+                    label={opt.label}
+                    emoji={opt.emoji}
+                    active={newPetSpecies === opt.value}
+                    onToggle={() => setNewPetSpecies(opt.value)}
+                  />
+                ))}
+              </div>
+              <Input
+                placeholder="Breed (optional)"
+                value={newPetBreed}
+                onChange={(e) => setNewPetBreed(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-2">
+                {ageOptions.map((opt) => (
+                  <ToggleChip
+                    key={opt.value}
+                    label={opt.label}
+                    emoji={opt.emoji}
+                    active={newPetAge === opt.value}
+                    onToggle={() => setNewPetAge(opt.value)}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-bold text-muted-foreground">Vibes</p>
+              <div className="flex flex-wrap gap-2">
+                {allVibes.map((vibe) => (
+                  <ToggleChip
+                    key={vibe}
+                    label={vibeConfig[vibe].label}
+                    emoji={vibeConfig[vibe].icon}
+                    active={newPetVibes.includes(vibe)}
+                    onToggle={() => setNewPetVibes(toggleInArray(newPetVibes, vibe))}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAddPet} className="flex-1 font-bold">
+                  Add Pet
+                </Button>
+                <Button variant="ghost" onClick={() => setShowAddForm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full gap-2 font-semibold"
+            onClick={() => setShowAddForm(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Another Pet
+          </Button>
+        )}
+      </div>
 
       <Separator />
 
@@ -247,7 +411,6 @@ const Profile = () => {
                   onToggle={() =>
                     updatePreferences({
                       vibesWanted: toggleInArray(preferences.vibesWanted, vibe),
-                      // Remove from excluded if adding to wanted
                       vibesExcluded: preferences.vibesExcluded.filter((v) => v !== vibe),
                     })
                   }
@@ -280,7 +443,6 @@ const Profile = () => {
                   onToggle={() =>
                     updatePreferences({
                       vibesExcluded: toggleInArray(preferences.vibesExcluded, vibe),
-                      // Remove from wanted if adding to excluded
                       vibesWanted: preferences.vibesWanted.filter((v) => v !== vibe),
                     })
                   }

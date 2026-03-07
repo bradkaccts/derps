@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, MapPin, ShieldCheck, ClipboardList } from "lucide-react";
+import { ArrowLeft, Heart, MapPin, ShieldCheck, ClipboardList, HeartHandshake } from "lucide-react";
 import { mockPets } from "@/data/mock-pets";
 import { vibeConfig } from "@/lib/vibes";
 import { Badge } from "@/components/ui/badge";
@@ -8,19 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useApplications } from "@/context/ApplicationContext";
+import { useMyPets } from "@/context/MyPetsContext";
+import { usePlaydates } from "@/context/PlaydateContext";
+import { calculateMatchScore } from "@/lib/matching";
+import { MatchScoreBadge } from "@/components/pets/MatchScoreBadge";
 import { currentUser } from "@/data/mock-users";
 import { AdoptionForm } from "@/components/applications/AdoptionForm";
 import { ApplicationStatusTracker } from "@/components/applications/ApplicationStatusTracker";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const PetProfile = () => {
   const { id } = useParams();
   const { toggleFavorite, isFavorited } = useFavorites();
   const { getApplicationForPetByAdopter } = useApplications();
+  const { activePet } = useMyPets();
+  const { requestPlaydate, getRequestForPet } = usePlaydates();
   const [formOpen, setFormOpen] = useState(false);
   const favorited = id ? isFavorited(id) : false;
   const pet = mockPets.find((p) => p.id === id);
   const existingApp = pet ? getApplicationForPetByAdopter(pet.id, currentUser.id) : undefined;
+  const existingPlaydate = pet ? getRequestForPet(pet.id) : undefined;
+
+  const match = pet && activePet ? calculateMatchScore(activePet, pet) : null;
 
   if (!pet) {
     return (
@@ -34,12 +44,14 @@ const PetProfile = () => {
     );
   }
 
-  // Mock compatibility score
-  const compatibilityScore = Math.floor(Math.random() * 30) + 70;
+  const handlePlaydateRequest = () => {
+    if (!activePet) return;
+    requestPlaydate(activePet.id, pet.id);
+    toast.success(`Playdate request sent to ${pet.name}! 🐾`);
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Mobile: stacked / Desktop: split */}
       <div className="md:flex md:gap-8">
         {/* Media Gallery */}
         <div className="md:w-1/2">
@@ -89,7 +101,6 @@ const PetProfile = () => {
             {pet.location} · {pet.distanceKm}km away
           </div>
 
-          {/* Health Badge */}
           {pet.healthVerified && (
             <div className="flex items-center gap-1.5 mb-4 text-sm font-semibold text-primary">
               <ShieldCheck className="h-4 w-4" />
@@ -97,27 +108,55 @@ const PetProfile = () => {
             </div>
           )}
 
-          {/* Vibes */}
+          {/* Vibes with shared highlighting */}
           <div className="flex flex-wrap gap-1.5 mb-6">
             {pet.vibes.map((vibe) => {
               const config = vibeConfig[vibe];
+              const isShared = match?.sharedVibes.includes(vibe);
               return (
-                <Badge key={vibe} variant="secondary" className="gap-1 font-semibold">
+                <Badge
+                  key={vibe}
+                  variant={isShared ? "default" : "secondary"}
+                  className={cn("gap-1 font-semibold", isShared && "ring-1 ring-primary/30")}
+                >
                   <span>{config.icon}</span>
                   {config.label}
+                  {isShared && <span className="text-[10px]">✓</span>}
                 </Badge>
               );
             })}
           </div>
 
-          {/* Compatibility Meter */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="font-bold text-foreground">Compatibility</span>
-              <span className="font-bold text-primary">{compatibilityScore}%</span>
+          {/* Playdate Match Card */}
+          {match && (
+            <div className="mb-6 rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-4">
+                <MatchScoreBadge score={match.score} label={match.label} emoji={match.emoji} size="lg" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-foreground mb-1">
+                    Playdate Match with {activePet?.name}
+                  </h3>
+                  {match.sharedVibes.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Shared vibes: {match.sharedVibes.map((v) => vibeConfig[v].label).join(", ")}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-            <Progress value={compatibilityScore} className="h-3" />
-          </div>
+          )}
+
+          {/* Compatibility (fallback when no active pet) */}
+          {!match && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="font-bold text-foreground">Compatibility</span>
+                <Link to="/profile" className="text-xs text-primary hover:underline">
+                  Register your pet for real scores →
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Bio */}
           <div className="mb-4">
@@ -137,8 +176,27 @@ const PetProfile = () => {
             <p className="text-sm text-foreground">{pet.rehomingReason}</p>
           </div>
 
-          {/* Application Status or Apply Button */}
+          {/* Actions */}
           <div className="sticky bottom-20 md:bottom-4 space-y-3">
+            {/* Playdate Request */}
+            {activePet && (
+              existingPlaydate ? (
+                <div className="text-center text-sm font-bold text-primary py-2">
+                  ✅ Playdate request sent!
+                </div>
+              ) : (
+                <Button
+                  onClick={handlePlaydateRequest}
+                  variant="outline"
+                  className="w-full h-12 text-base font-bold rounded-xl gap-2 btn-bouncy"
+                >
+                  <HeartHandshake className="h-5 w-5" />
+                  Request Playdate with {pet.name}
+                </Button>
+              )
+            )}
+
+            {/* Application Status or Apply Button */}
             {existingApp ? (
               <div className="rounded-xl border border-border bg-card p-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-bold text-foreground">

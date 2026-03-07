@@ -8,6 +8,8 @@ import { FavoritesProvider } from "@/context/FavoritesContext";
 import { PreferencesProvider } from "@/context/PreferencesContext";
 import { MessagingProvider } from "@/context/MessagingContext";
 import { ApplicationProvider } from "@/context/ApplicationContext";
+import { MyPetsProvider } from "@/context/MyPetsContext";
+import { PlaydateProvider } from "@/context/PlaydateContext";
 import Index from "./pages/Index";
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
@@ -30,19 +32,23 @@ const App = () => (
           <FavoritesProvider>
             <MessagingProvider>
               <ApplicationProvider>
-                <AppLayout>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/pet/:id" element={<PetProfile />} />
-                    <Route path="/inbox" element={<Inbox />} />
-                    <Route path="/my-derps" element={<MyDerps />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/create-listing" element={<CreateListing />} />
-                    <Route path="/my-applications" element={<MyApplications />} />
-                    <Route path="/applications-inbox" element={<RehomerApplications />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </AppLayout>
+                <MyPetsProvider>
+                  <PlaydateProvider>
+                    <AppLayout>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/pet/:id" element={<PetProfile />} />
+                        <Route path="/inbox" element={<Inbox />} />
+                        <Route path="/my-derps" element={<MyDerps />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/create-listing" element={<CreateListing />} />
+                        <Route path="/my-applications" element={<MyApplications />} />
+                        <Route path="/applications-inbox" element={<RehomerApplications />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AppLayout>
+                  </PlaydateProvider>
+                </MyPetsProvider>
               </ApplicationProvider>
             </MessagingProvider>
           </FavoritesProvider>

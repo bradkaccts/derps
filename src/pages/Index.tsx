@@ -1,18 +1,21 @@
 import { useState, useMemo } from "react";
-import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
+import { PlaydateCard } from "@/components/pets/PlaydateCard";
 import { DerpyEmpty } from "@/components/ui/derpy-states";
 import { VibeFilter } from "@/components/pets/VibeFilter";
 import { SpeciesFilter } from "@/components/pets/SpeciesFilter";
 import { SwipeCardStack } from "@/components/pets/SwipeCardStack";
 import { useFavorites } from "@/context/FavoritesContext";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useMyPets } from "@/context/MyPetsContext";
+import { rankByCompatibility } from "@/lib/matching";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "swipe" | "grid";
+type ViewMode = "swipe" | "grid" | "playdates";
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("swipe");
@@ -20,6 +23,7 @@ const Index = () => {
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
   const { applyPreferences, activeFilterCount } = usePreferences();
+  const { activePet } = useMyPets();
 
   const toggleVibe = (vibe: VibeTag) => {
     setVibeFilters((prev) =>
@@ -27,7 +31,6 @@ const Index = () => {
     );
   };
 
-  // Apply preferences first, then page-level filters
   const filteredPets = useMemo(() => {
     const preFiltered = applyPreferences(mockPets);
     return preFiltered.filter((pet) => {
@@ -44,6 +47,11 @@ const Index = () => {
     );
   }, [filteredPets, favorites, skipped]);
 
+  const rankedPets = useMemo(() => {
+    if (!activePet) return [];
+    return rankByCompatibility(activePet, filteredPets.filter((p) => p.status === "available"));
+  }, [activePet, filteredPets]);
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -52,18 +60,21 @@ const Index = () => {
           <PawPrint className="h-7 w-7 text-primary md:hidden" />
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
-              {viewMode === "swipe" ? "New Arrivals" : "Browse All"}
+              {viewMode === "swipe" ? "New Arrivals" : viewMode === "playdates" ? "Playdates" : "Browse All"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {viewMode === "swipe"
                 ? "Swipe right to heart, left to skip 💕"
+                : viewMode === "playdates"
+                ? activePet
+                  ? `Finding friends for ${activePet.name} 🐾`
+                  : "Register your pet to find matches!"
                 : `${filteredPets.length} adorable derps looking for a home`}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Preferences indicator */}
           {activeFilterCount > 0 && (
             <Link
               to="/profile"
@@ -102,6 +113,18 @@ const Index = () => {
               <LayoutGrid className="h-4 w-4" />
               <span className="hidden sm:inline">Grid</span>
             </button>
+            <button
+              onClick={() => setViewMode("playdates")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+                viewMode === "playdates"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <HeartHandshake className="h-4 w-4" />
+              <span className="hidden sm:inline">Playdates</span>
+            </button>
           </div>
         </div>
       </div>
@@ -123,6 +146,28 @@ const Index = () => {
           onSwipeRight={(id) => toggleFavorite(id)}
           onSwipeLeft={(id) => addSkipped(id)}
         />
+      ) : viewMode === "playdates" ? (
+        !activePet ? (
+          <DerpyEmpty
+            title="No pet registered!"
+            message="Add your pet in your Profile to start finding playdate matches."
+          >
+            <Link to="/profile" className="text-sm font-semibold text-primary hover:underline mt-2">
+              Go to Profile →
+            </Link>
+          </DerpyEmpty>
+        ) : rankedPets.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
+            {rankedPets.map((pet) => (
+              <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
+            ))}
+          </div>
+        ) : (
+          <DerpyEmpty
+            title="No matches found!"
+            message="Try adjusting your filters to find playdate buddies for your pet."
+          />
+        )
       ) : filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
           {filteredPets.map((pet) => (
@@ -133,7 +178,6 @@ const Index = () => {
               isFavorited={isFavorited(pet.id)}
             />
           ))}
-          {/* Rehome CTA card */}
           <Link
             to="/create-listing"
             className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center transition-all hover:border-primary/60 hover:bg-primary/10 btn-bouncy"
