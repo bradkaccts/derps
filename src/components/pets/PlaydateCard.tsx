@@ -25,7 +25,14 @@ export function PlaydateCard({ pet, match }: PlaydateCardProps) {
   const handleRequest = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!activePet) return;
-    requestPlaydate(activePet.id, pet.id);
+    requestPlaydate({
+      myPetId: activePet.id,
+      myPetName: activePet.name,
+      targetPetId: pet.id,
+      targetPetName: pet.name,
+      targetPetPhoto: pet.photos[0],
+      targetOwnerName: pet.rehomerId === "u2" ? "Fiona Rehomer" : "Paul Rehomer",
+    });
     toast.success(`Playdate request sent to ${pet.name}! 🐾`);
   };
 
