@@ -23,7 +23,7 @@ const Index = () => {
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
   const { applyPreferences, activeFilterCount } = usePreferences();
-  const { activePet } = useMyPets();
+  const { myPets, activePet, setActivePetId } = useMyPets();
 
   const toggleVibe = (vibe: VibeTag) => {
     setVibeFilters((prev) =>
