@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake, Sparkles, MapPin, Clock, Ruler } from "lucide-react";
+
 import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
