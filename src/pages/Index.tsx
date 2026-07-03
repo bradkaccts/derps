@@ -14,6 +14,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { useMyPets } from "@/context/MyPetsContext";
 import { rankByCompatibility } from "@/lib/matching";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "swipe" | "grid" | "playdates";
