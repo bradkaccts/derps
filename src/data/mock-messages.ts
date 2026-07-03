@@ -92,7 +92,7 @@ export const mockMessages: Record<string, Message[]> = {
   c2: [
     { id: "m6", conversationId: "c2", senderId: "u1", text: "Hi Fiona! Noodle is adorable. Would love to learn more about her personality.", timestamp: "2026-02-23T14:00:00", type: "text" },
     { id: "m7", conversationId: "c2", senderId: "u2", text: "Noodle is the laziest, most lovable sausage dog you'll ever meet! She's a blanket burrito expert 😂", timestamp: "2026-02-23T14:30:00", type: "text" },
-    { id: "m8", conversationId: "c2", senderId: "u1", text: "Ha! That sounds perfect. Could we set up a meet and greet?", timestamp: "2026-02-23T15:00:00", type: "text" },
+    { id: "m8", conversationId: "c2", senderId: "u1", text: "Ha! That sounds perfect. Could we set up a derpdate?", timestamp: "2026-02-23T15:00:00", type: "text" },
     {
       id: "m9", conversationId: "c2", senderId: "u2", text: "Let's do it! How about this Saturday?", timestamp: "2026-02-23T15:30:00", type: "meet-greet",
       meetGreet: { date: "2026-03-01", time: "14:00", location: "Riverside Dog Park, San Francisco", status: "accepted" },
