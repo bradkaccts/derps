@@ -76,17 +76,22 @@ export function PlaydateCard({ pet, match }: PlaydateCardProps) {
             const config = vibeConfig[vibe];
             const isShared = match.sharedVibes.includes(vibe);
             return (
-              <Badge
+              <span
                 key={vibe}
-                variant={isShared ? "default" : "secondary"}
-                className={cn("text-xs gap-1 font-medium", isShared && "ring-1 ring-primary/30")}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed",
+                  isShared
+                    ? "bg-primary/10 text-primary border-primary/40"
+                    : "bg-muted/60 text-muted-foreground border-border"
+                )}
               >
-                <span>{config?.icon}</span>
+                <span aria-hidden>{config?.icon}</span>
                 {config?.label ?? vibe}
-              </Badge>
+              </span>
             );
           })}
         </div>
+
 
         {/* Request button */}
         {existingRequest ? (
