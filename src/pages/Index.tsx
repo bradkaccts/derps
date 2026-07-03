@@ -305,7 +305,25 @@ const Index = () => {
               </div>
             </div>
 
-            {rankedPets.length > 0 ? (
+            {isRefreshing ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
+                    <Skeleton className="aspect-square w-full rounded-none" />
+                    <div className="p-3 space-y-2">
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-3 w-32" />
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <Skeleton className="h-5 w-14 rounded-md" />
+                        <Skeleton className="h-5 w-16 rounded-md" />
+                      </div>
+                      <Skeleton className="h-9 w-full rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : rankedPets.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
                 {rankedPets.map((pet) => (
                   <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
