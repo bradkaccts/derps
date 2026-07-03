@@ -17,6 +17,22 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "swipe" | "grid" | "playdates";
+type SortMode = "match" | "nearest" | "newest";
+type DistanceCap = 5 | 10 | 25 | 0; // 0 = any
+
+const SORT_OPTIONS: { id: SortMode; label: string; icon: typeof Sparkles }[] = [
+  { id: "match", label: "Best Match", icon: Sparkles },
+  { id: "nearest", label: "Nearest", icon: MapPin },
+  { id: "newest", label: "Newest", icon: Clock },
+];
+
+const DISTANCE_OPTIONS: { id: DistanceCap; label: string }[] = [
+  { id: 5, label: "5km" },
+  { id: 10, label: "10km" },
+  { id: 25, label: "25km" },
+  { id: 0, label: "Any" },
+];
+
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("swipe");
