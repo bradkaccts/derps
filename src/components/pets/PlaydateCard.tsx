@@ -33,7 +33,7 @@ export function PlaydateCard({ pet, match }: PlaydateCardProps) {
       targetPetPhoto: pet.photos[0],
       targetOwnerName: pet.rehomerId === "u2" ? "Fiona Rehomer" : "Paul Rehomer",
     });
-    toast.success(`Playdate request sent to ${pet.name}! 🐾`);
+    toast.success(`Derpdate request sent to ${pet.name}! 🐾`);
   };
 
   return (
@@ -100,7 +100,7 @@ export function PlaydateCard({ pet, match }: PlaydateCardProps) {
             size="sm"
           >
             <HeartHandshake className="h-4 w-4" />
-            Request Playdate
+            Request Derpdate
           </Button>
         )}
       </CardContent>

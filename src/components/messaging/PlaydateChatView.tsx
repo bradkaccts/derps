@@ -34,7 +34,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
   const handleSchedule = () => {
     if (!meetDate || !meetTime || !meetLocation.trim()) return;
     schedulePlaydate(request.id, { date: meetDate, time: meetTime, location: meetLocation.trim() });
-    toast.success("Playdate scheduled! 📅🐾");
+    toast.success("Derpdate scheduled! 📅🐾");
     setShowScheduler(false);
     setMeetDate("");
     setMeetTime("");
@@ -86,7 +86,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
           <div className="flex gap-1">
             <Button size="sm" className="text-xs" onClick={() => {
               updateStatus(request.id, "accepted");
-              toast.success("Playdate accepted! 🎉");
+              toast.success("Derpdate accepted! 🎉");
             }}>
               Accept
             </Button>
@@ -104,7 +104,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
             className="text-xs gap-1"
             onClick={() => {
               updateStatus(request.id, "completed");
-              toast.success("Playdate complete! Hope they had fun! 🎉");
+              toast.success("Derpdate complete! Hope they had fun! 🎉");
             }}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -117,7 +117,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
       {showScheduler && (
         <div className="border-b border-border p-3 bg-secondary/30 shrink-0">
           <h4 className="text-sm font-bold text-foreground mb-2">
-            📅 Schedule the Playdate
+            📅 Schedule the Derpdate
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
             <div>
@@ -151,7 +151,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
             <CardContent className="p-3 space-y-1">
               <div className="flex items-center gap-2 text-sm font-bold text-foreground">
                 <HeartHandshake className="h-4 w-4 text-primary" />
-                Scheduled Playdate
+                Scheduled Derpdate
               </div>
               <div className="flex items-center gap-1.5 text-sm text-foreground">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -176,7 +176,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
           <div className="flex flex-col items-center justify-center h-full text-center">
             <span className="text-4xl mb-2">🐾</span>
             <p className="text-sm text-muted-foreground">
-              Start chatting about your playdate!
+              Start chatting about your derpdate!
             </p>
           </div>
         )}
@@ -218,7 +218,7 @@ export function PlaydateChatView({ request }: PlaydateChatViewProps) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Chat about the playdate..."
+            placeholder="Chat about the derpdate..."
             className="flex-1"
           />
           <Button type="submit" size="icon" disabled={!input.trim()}>

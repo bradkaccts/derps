@@ -163,7 +163,7 @@ const Profile = () => {
 
       <Separator />
 
-      {/* My Pets / Playdates Section */}
+      {/* My Pets / Derpdates Section */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <PawPrint className="h-5 w-5 text-primary" />
@@ -171,7 +171,7 @@ const Profile = () => {
           <Badge variant="secondary" className="text-xs">{myPets.length}</Badge>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          Register your pets to find playdate matches! The active pet is used for compatibility scoring.
+          Register your pets to find derpdate matches! The active pet is used for compatibility scoring.
         </p>
 
         {/* Pet list */}

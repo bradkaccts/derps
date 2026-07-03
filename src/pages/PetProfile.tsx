@@ -54,7 +54,7 @@ const PetProfile = () => {
       targetPetPhoto: pet.photos[0],
       targetOwnerName: pet.rehomerId === "u2" ? "Fiona Rehomer" : "Paul Rehomer",
     });
-    toast.success(`Playdate request sent to ${pet.name}! 🐾`);
+    toast.success(`Derpdate request sent to ${pet.name}! 🐾`);
   };
 
   return (
@@ -134,14 +134,14 @@ const PetProfile = () => {
             })}
           </div>
 
-          {/* Playdate Match Card */}
+          {/* Derpdate Match Card */}
           {match && (
             <div className="mb-6 rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-4">
                 <MatchScoreBadge score={match.score} label={match.label} emoji={match.emoji} size="lg" />
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-foreground mb-1">
-                    Playdate Match with {activePet?.name}
+                    Derpdate Match with {activePet?.name}
                   </h3>
                   {match.sharedVibes.length > 0 && (
                     <p className="text-xs text-muted-foreground">
@@ -185,11 +185,11 @@ const PetProfile = () => {
 
           {/* Actions */}
           <div className="sticky bottom-20 md:bottom-4 space-y-3">
-            {/* Playdate Request */}
+            {/* Derpdate Request */}
             {activePet && (
               existingPlaydate ? (
                 <div className="text-center text-sm font-bold text-primary py-2">
-                  ✅ Playdate request sent!
+                  ✅ Derpdate request sent!
                 </div>
               ) : (
                 <Button
@@ -198,7 +198,7 @@ const PetProfile = () => {
                   className="w-full h-12 text-base font-bold rounded-xl gap-2 btn-bouncy"
                 >
                   <HeartHandshake className="h-5 w-5" />
-                  Request Playdate with {pet.name}
+                  Request Derpdate with {pet.name}
                 </Button>
               )
             )}

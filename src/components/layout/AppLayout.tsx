@@ -72,7 +72,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Button>
             </div>
 
-            {/* Playdates quick link */}
+            {/* Derpdates quick link */}
             <div className="mt-4">
               <Button
                 asChild
@@ -81,7 +81,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               >
                 <Link to="/?view=playdates">
                   <HeartHandshake className="h-4 w-4" />
-                  Playdates
+                  Derpdates
                   {pendingCount > 0 && (
                     <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold animate-wag">
                       {pendingCount}

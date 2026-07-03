@@ -90,10 +90,10 @@ export function PlaydateProvider({ children }: { children: ReactNode }) {
         const statusMsg: PlaydateChatMessage = {
           id: `pm-${Date.now()}`,
           senderId: "system",
-          text: status === "accepted" ? "🎉 Playdate accepted! Schedule a time below." 
-              : status === "declined" ? "😢 Playdate declined."
-              : status === "scheduled" ? "📅 Playdate scheduled!"
-              : status === "completed" ? "✅ Playdate completed! Hope they had fun!" 
+          text: status === "accepted" ? "🎉 Derpdate accepted! Schedule a time below." 
+              : status === "declined" ? "😢 Derpdate declined."
+              : status === "scheduled" ? "📅 Derpdate scheduled!"
+              : status === "completed" ? "✅ Derpdate completed! Hope they had fun!" 
               : `Status updated to ${status}`,
           timestamp: new Date().toISOString(),
         };

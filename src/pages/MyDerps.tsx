@@ -154,12 +154,12 @@ const MyDerps = () => {
         </div>
       )}
 
-      {/* Upcoming Playdates */}
+      {/* Upcoming Derpdates */}
       {requests.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-4">
             <HeartHandshake className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-extrabold text-foreground">Playdate Requests</h2>
+            <h2 className="text-xl font-extrabold text-foreground">Derpdate Requests</h2>
             <Badge variant="secondary" className="text-xs">{requests.length}</Badge>
           </div>
           <div className="space-y-2">
