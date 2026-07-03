@@ -1,31 +1,12 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { useContext, useState, useCallback, type ReactNode } from "react";
 import {
   mockConversations,
   mockMessages,
-  type Conversation,
   type Message,
+  type Conversation,
 } from "@/data/mock-messages";
+import { MessagingContext } from "./messaging-context-instance";
 
-interface MessagingContextValue {
-  conversations: Conversation[];
-  getMessages: (conversationId: string) => Message[];
-  sendMessage: (conversationId: string, text: string) => void;
-  proposeMeetGreet: (
-    conversationId: string,
-    date: string,
-    time: string,
-    location: string
-  ) => void;
-  respondMeetGreet: (
-    conversationId: string,
-    messageId: string,
-    accept: boolean
-  ) => void;
-  checkIn: (conversationId: string) => void;
-  totalUnread: number;
-}
-
-const MessagingContext = createContext<MessagingContextValue | null>(null);
 
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
