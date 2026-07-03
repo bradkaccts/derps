@@ -75,7 +75,7 @@ export function ChatView({ conversation, messages }: ChatViewProps) {
             onClick={() => setShowScheduler(!showScheduler)}
           >
             <CalendarPlus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Meet & Greet</span>
+            <span className="hidden sm:inline">Derpdate</span>
           </Button>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function ChatView({ conversation, messages }: ChatViewProps) {
       {showScheduler && (
         <div className="border-b border-border p-3 bg-secondary/30 shrink-0">
           <h4 className="text-sm font-bold text-foreground mb-2">
-            📅 Propose a Meet & Greet
+            📅 Propose a Derpdate
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
             <div>
@@ -239,7 +239,7 @@ function MeetGreetCard({
         <CardContent className="p-3 space-y-2">
           <div className="flex items-center gap-2">
             <CalendarPlus className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold text-foreground">Meet & Greet</span>
+            <span className="text-sm font-bold text-foreground">Derpdate</span>
             <Badge variant="secondary" className="text-xs ml-auto">
               {statusLabels[mg.status]}
             </Badge>

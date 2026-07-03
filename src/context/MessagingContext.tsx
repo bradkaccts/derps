@@ -67,7 +67,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         id: `m-${Date.now()}`,
         conversationId,
         senderId: "u1",
-        text: `📅 Meet & Greet proposed`,
+        text: `📅 Derpdate proposed`,
         timestamp: new Date().toISOString(),
         type: "meet-greet",
         meetGreet: { date, time, location, status: "proposed" },
@@ -79,7 +79,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conversationId
-            ? { ...c, lastMessage: "📅 Meet & Greet proposed", lastMessageTime: msg.timestamp }
+            ? { ...c, lastMessage: "📅 Derpdate proposed", lastMessageTime: msg.timestamp }
             : c
         )
       );
