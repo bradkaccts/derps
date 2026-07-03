@@ -157,11 +157,64 @@ const Index = () => {
             </Link>
           </DerpyEmpty>
         ) : rankedPets.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
-            {rankedPets.map((pet) => (
-              <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
-            ))}
-          </div>
+          <>
+            {myPets.length > 1 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-muted-foreground mb-2">
+                  🐾 Finding matches for
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {myPets.map((pet) => {
+                    const isActive = pet.id === activePet.id;
+                    return (
+                      <button
+                        key={pet.id}
+                        onClick={() => setActivePetId(pet.id)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "flex items-center gap-2 rounded-full border-2 pl-1 pr-3 py-1 transition-all btn-bouncy",
+                          isActive
+                            ? "border-primary bg-primary/10 shadow-sm"
+                            : "border-border bg-card hover:border-primary/40"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center overflow-hidden rounded-full ring-2",
+                            isActive ? "ring-primary" : "ring-transparent"
+                          )}
+                        >
+                          {pet.photos?.[0] ? (
+                            <img
+                              src={pet.photos[0]}
+                              alt={pet.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-lg">🐾</span>
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-sm font-bold",
+                            isActive ? "text-primary" : "text-foreground"
+                          )}
+                        >
+                          {pet.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
+              {rankedPets.map((pet) => (
+                <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
+              ))}
+            </div>
+          </>
+
         ) : (
           <DerpyEmpty
             title="No matches found!"
