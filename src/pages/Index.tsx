@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake, Sparkles, MapPin, Clock, Ruler } from "lucide-react";
+import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake, Sparkles, MapPin, Clock, Ruler, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 
 import { Link } from "react-router-dom";
 import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
@@ -102,15 +104,41 @@ const Index = () => {
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
               {viewMode === "swipe" ? "New Arrivals" : viewMode === "playdates" ? "Derpdates" : "Browse All"}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {viewMode === "swipe"
-                ? "Swipe right to heart, left to skip 💕"
-                : viewMode === "playdates"
-                ? activePet
-                  ? `Finding nearby Derpdate buddies for ${activePet.name} 🐾`
-                  : "Register your pet to find matches!"
-                : `${filteredPets.length} adorable derps looking for a home`}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm text-muted-foreground">
+                {viewMode === "swipe"
+                  ? "Swipe right to heart, left to skip 💕"
+                  : viewMode === "playdates"
+                  ? activePet
+                    ? `Finding nearby Derpdate buddies for ${activePet.name} 🐾`
+                    : "Register your pet to find matches!"
+                  : `${filteredPets.length} adorable derps looking for a home`}
+              </p>
+              {viewMode === "swipe" && (
+                <Popover>
+                  <PopoverTrigger
+                    aria-label="How swiping works"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Info className="h-4 w-4" />
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="start" className="w-72 rounded-2xl border-2 border-primary/20 p-4 shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                        <Sparkles className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-sm font-bold text-foreground">How your picks help 🐾</p>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          Every Derp you heart is saved to <span className="font-semibold text-foreground">My Derps</span>. Your picks (and skips!) train our AI to sniff out even better matches for you next time.
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+
           </div>
         </div>
 
