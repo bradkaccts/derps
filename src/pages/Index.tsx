@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake, Sparkles, MapPin, Clock, Ruler } from "lucide-react";
 
 import { Link } from "react-router-dom";
