@@ -67,7 +67,7 @@ const Index = () => {
                 ? "Swipe right to heart, left to skip 💕"
                 : viewMode === "playdates"
                 ? activePet
-                  ? `Finding derpdate buddies for ${activePet.name} 🐾`
+                  ? `Finding nearby Derpdate buddies for ${activePet.name} 🐾`
                   : "Register your pet to find matches!"
                 : `${filteredPets.length} adorable derps looking for a home`}
             </p>
