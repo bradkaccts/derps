@@ -189,7 +189,7 @@ const Index = () => {
               Go to Profile →
             </Link>
           </DerpyEmpty>
-        ) : rankedPets.length > 0 ? (
+        ) : (
           <>
             {myPets.length > 1 && (
               <div className="mb-4">
@@ -241,19 +241,78 @@ const Index = () => {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
-              {rankedPets.map((pet) => (
-                <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
-              ))}
-            </div>
-          </>
 
-        ) : (
-          <DerpyEmpty
-            title="No matches found!"
-            message="Try adjusting your filters to find derpdate buddies for your pet."
-          />
+            {/* Sort + distance controls */}
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Sort by
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {SORT_OPTIONS.map(({ id, label, icon: Icon }) => {
+                    const isActive = sortMode === id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setSortMode(id)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all btn-bouncy",
+                          isActive
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                            : "border-border bg-card text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  <Ruler className="h-3 w-3" /> Within
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {DISTANCE_OPTIONS.map(({ id, label }) => {
+                    const isActive = distanceCap === id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setDistanceCap(id)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-xs font-bold transition-all btn-bouncy",
+                          isActive
+                            ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                            : "border-border bg-card text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {rankedPets.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
+                {rankedPets.map((pet) => (
+                  <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
+                ))}
+              </div>
+            ) : (
+              <DerpyEmpty
+                title="No matches found!"
+                message="Try widening the distance or clearing filters to find more derpdate buddies."
+              />
+            )}
+          </>
         )
+
       ) : filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
           {filteredPets.map((pet) => (
