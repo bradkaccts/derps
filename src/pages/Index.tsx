@@ -69,8 +69,21 @@ const Index = () => {
 
   const rankedPets = useMemo(() => {
     if (!activePet) return [];
-    return rankByCompatibility(activePet, filteredPets.filter((p) => p.status === "available"));
-  }, [activePet, filteredPets]);
+    const candidates = filteredPets.filter(
+      (p) => p.status === "available" && (distanceCap === 0 || p.distanceKm <= distanceCap)
+    );
+    const ranked = rankByCompatibility(activePet, candidates);
+    if (sortMode === "nearest") {
+      return [...ranked].sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+    if (sortMode === "newest") {
+      return [...ranked].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    }
+    return ranked;
+  }, [activePet, filteredPets, sortMode, distanceCap]);
+
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
