@@ -306,7 +306,7 @@ const Index = () => {
             </div>
 
             {isRefreshing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
                     <Skeleton className="aspect-square w-full rounded-none" />
