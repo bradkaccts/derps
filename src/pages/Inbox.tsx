@@ -69,7 +69,7 @@ const Inbox = () => {
         )}
       >
         <HeartHandshake className="h-4 w-4" />
-        Playdates
+        Derpdates
         {requests.length > 0 && (
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
             {requests.length}
