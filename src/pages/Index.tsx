@@ -38,6 +38,9 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("swipe");
   const [speciesFilter, setSpeciesFilter] = useState<Species | "all">("all");
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("match");
+  const [distanceCap, setDistanceCap] = useState<DistanceCap>(0);
+
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
   const { applyPreferences, activeFilterCount } = usePreferences();
   const { myPets, activePet, setActivePetId } = useMyPets();
