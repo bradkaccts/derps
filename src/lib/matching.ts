@@ -67,7 +67,7 @@ export function calculateMatchScore(petA: Pet, petB: Pet): MatchResult {
   let label: string;
   let emoji: string;
   if (clampedScore >= 90) {
-    label = "Perfect Playdate!";
+    label = "Perfect Derpdate!";
     emoji = "💕";
   } else if (clampedScore >= 70) {
     label = "Great Match!";

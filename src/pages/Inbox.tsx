@@ -69,7 +69,7 @@ const Inbox = () => {
         )}
       >
         <HeartHandshake className="h-4 w-4" />
-        Playdates
+        Derpdates
         {requests.length > 0 && (
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
             {requests.length}
@@ -79,15 +79,15 @@ const Inbox = () => {
     </div>
   );
 
-  // Playdate list component
+  // Derpdate list component
   const PlaydateList = () => {
     if (requests.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center px-4">
           <span className="text-5xl mb-4">🐾</span>
-          <h2 className="text-lg font-bold text-foreground mb-1">No playdate chats yet</h2>
+          <h2 className="text-lg font-bold text-foreground mb-1">No derpdate chats yet</h2>
           <p className="text-sm text-muted-foreground">
-            Request a playdate from the Playdates tab to start chatting!
+            Request a derpdate from the Derpdates tab to start chatting!
           </p>
         </div>
       );
@@ -222,11 +222,11 @@ const Inbox = () => {
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <span className="text-5xl mb-4">{tab === "playdates" ? "🐾" : "💬"}</span>
             <h2 className="text-lg font-bold text-foreground mb-1">
-              {tab === "playdates" ? "Select a playdate" : "Select a conversation"}
+              {tab === "playdates" ? "Select a derpdate" : "Select a conversation"}
             </h2>
             <p className="text-sm text-muted-foreground">
               {tab === "playdates"
-                ? "Choose a playdate chat to coordinate meetups!"
+                ? "Choose a derpdate chat to coordinate meetups!"
                 : "Choose a chat to start messaging about a derp!"}
             </p>
           </div>

@@ -60,14 +60,14 @@ const Index = () => {
           <PawPrint className="h-7 w-7 text-primary md:hidden" />
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
-              {viewMode === "swipe" ? "New Arrivals" : viewMode === "playdates" ? "Playdates" : "Browse All"}
+              {viewMode === "swipe" ? "New Arrivals" : viewMode === "playdates" ? "Derpdates" : "Browse All"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {viewMode === "swipe"
                 ? "Swipe right to heart, left to skip 💕"
                 : viewMode === "playdates"
                 ? activePet
-                  ? `Finding friends for ${activePet.name} 🐾`
+                  ? `Finding derpdate buddies for ${activePet.name} 🐾`
                   : "Register your pet to find matches!"
                 : `${filteredPets.length} adorable derps looking for a home`}
             </p>
@@ -123,7 +123,7 @@ const Index = () => {
               )}
             >
               <HeartHandshake className="h-4 w-4" />
-              <span className="hidden sm:inline">Playdates</span>
+              <span className="hidden sm:inline">Derpdates</span>
             </button>
           </div>
         </div>
@@ -150,7 +150,7 @@ const Index = () => {
         !activePet ? (
           <DerpyEmpty
             title="No pet registered!"
-            message="Add your pet in your Profile to start finding playdate matches."
+            message="Add your pet in your Profile to start finding derpdate matches."
           >
             <Link to="/profile" className="text-sm font-semibold text-primary hover:underline mt-2">
               Go to Profile →
@@ -165,7 +165,7 @@ const Index = () => {
         ) : (
           <DerpyEmpty
             title="No matches found!"
-            message="Try adjusting your filters to find playdate buddies for your pet."
+            message="Try adjusting your filters to find derpdate buddies for your pet."
           />
         )
       ) : filteredPets.length > 0 ? (
