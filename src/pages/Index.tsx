@@ -86,6 +86,11 @@ const Index = () => {
     return ranked;
   }, [activePet, filteredPets, sortMode, distanceCap]);
 
+  useEffect(() => {
+    setIsRefreshing(true);
+    const timer = setTimeout(() => setIsRefreshing(false), 450);
+    return () => clearTimeout(timer);
+  }, [sortMode, distanceCap]);
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
