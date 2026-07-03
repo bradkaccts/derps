@@ -324,7 +324,7 @@ const Index = () => {
                 ))}
               </div>
             ) : rankedPets.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger animate-fade-in">
                 {rankedPets.map((pet) => (
                   <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
                 ))}
