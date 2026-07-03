@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PawPrint, LayoutGrid, Layers, SlidersHorizontal, PlusCircle, HeartHandshake, Sparkles, MapPin, Clock, Ruler } from "lucide-react";
 
 import { Link } from "react-router-dom";
@@ -14,6 +14,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { useMyPets } from "@/context/MyPetsContext";
 import { rankByCompatibility } from "@/lib/matching";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "swipe" | "grid" | "playdates";
@@ -40,6 +41,7 @@ const Index = () => {
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("match");
   const [distanceCap, setDistanceCap] = useState<DistanceCap>(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
   const { applyPreferences, activeFilterCount } = usePreferences();
@@ -84,6 +86,11 @@ const Index = () => {
     return ranked;
   }, [activePet, filteredPets, sortMode, distanceCap]);
 
+  useEffect(() => {
+    setIsRefreshing(true);
+    const timer = setTimeout(() => setIsRefreshing(false), 450);
+    return () => clearTimeout(timer);
+  }, [sortMode, distanceCap]);
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
@@ -298,7 +305,25 @@ const Index = () => {
               </div>
             </div>
 
-            {rankedPets.length > 0 ? (
+            {isRefreshing ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
+                    <Skeleton className="aspect-square w-full rounded-none" />
+                    <div className="p-3 space-y-2">
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-3 w-32" />
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <Skeleton className="h-5 w-14 rounded-md" />
+                        <Skeleton className="h-5 w-16 rounded-md" />
+                      </div>
+                      <Skeleton className="h-9 w-full rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : rankedPets.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-stagger">
                 {rankedPets.map((pet) => (
                   <PlaydateCard key={pet.id} pet={pet} match={pet.match} />
