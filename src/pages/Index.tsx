@@ -41,6 +41,7 @@ const Index = () => {
   const [vibeFilters, setVibeFilters] = useState<VibeTag[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("match");
   const [distanceCap, setDistanceCap] = useState<DistanceCap>(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { favorites, skipped, toggleFavorite, addSkipped, isFavorited } = useFavorites();
   const { applyPreferences, activeFilterCount } = usePreferences();
