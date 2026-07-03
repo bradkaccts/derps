@@ -1,147 +1,28 @@
+## Problem
 
+On the Derpdates grid, the match score sits in the top-right corner directly on the pet photo. Today it renders as a bare SVG ring + number + label text with no background. That fails on several real cards:
 
-# 🐾 Derps MVP — Implementation Plan
+- Score 76 on the beagle (Captain Fluff) — the number nearly disappears into the tan fur.
+- Score 55 on Whiskers — cream/white cat background washes out the ring.
+- The "Great Match!" / "Worth a Sniff" label uses `text-muted-foreground`, which is unreadable on almost every photo.
+- The verified badge on the left already solves this by using a solid `bg-primary/90` pill — the score badge is the outlier.
 
-## Overview
-A fun, family-friendly pet adoption platform with a whimsical "Derps" aesthetic. This MVP focuses on **discovery, profiles, messaging, and all three user roles** — built frontend-only with rich mock data so we can rapidly iterate on UX and design.
+## Recommendation
 
----
+**Recolor/restyle rather than relocate.** The top-right overlay position is the right pattern (it's a familiar dating-app convention, keeps the photo as the hero, and matches the Verified pill on the left). The fix is to give the badge its own opaque surface so it reads on any background — no layout shuffling required.
 
-## 1. Design System & Branding
-- **Color palette**: Warm creams (`#FFF8F0`), sage greens, terracotta accents — organic and approachable
-- **Typography**: Rounded sans-serif fonts (e.g., Nunito) for a friendly feel
-- **Micro-interactions**: Subtle "wiggle" on pet card hover, bouncy button animations, playful loading states
-- **Icons**: Custom Vibe icons — Sleeping Moon (low energy), Soccer Ball (high energy), Shield (good with other pets), Paw (kid-friendly)
+## Plan
 
----
+Edit `src/components/pets/MatchScoreBadge.tsx` only. No changes to `PlaydateCard.tsx` or business logic.
 
-## 2. Pages & Navigation
+1. **Wrap the ring in a solid chip.** Add a `rounded-full bg-card` (cream) container with `shadow-md` and a thin `ring-1 ring-border` around the SVG so the circle always sits on a known surface. The track circle stays `hsl(var(--border))`, the progress arc keeps its semantic color (primary / accent / muted).
+2. **Move the label into a pill under the ring.** Replace the bare `text-muted-foreground` label with a compact `rounded-full bg-card/95 backdrop-blur px-2 py-0.5 shadow-sm` pill so `🎾 Great Match!` / `👃 Worth a Sniff` stays legible. Text color switches to `text-foreground` (with the emoji carrying the semantic hue).
+3. **Tighten the small size.** At `size="sm"` the current 48px ring + separate label stack is taller than the Verified pill on the left, making the corner feel unbalanced. Reduce label to `text-[10px]` and pull it flush under the ring so the whole cluster matches the Verified pill's visual weight.
+4. **Keep semantic color logic intact.** The ring stroke and score number continue to use `text-primary` / `text-accent` / `text-muted-foreground` from the design tokens — only the surface behind them changes.
+5. **No other files touched.** `MatchScoreBadge` is also used on `PetProfile` at `size="lg"`; the same treatment improves readability there for free without any call-site changes.
 
-### Mobile: Bottom Tab Bar
-- **Home** (Discovery Feed), **Inbox**, **My Derps**, **Profile**
+### Technical notes
 
-### Desktop: Left Sidebar Navigation
-- Same sections with expanded labels and an Admin panel link for admin users
-
----
-
-## 3. Discovery Feed (Home)
-
-### Swipe Mode ("New Arrivals")
-- Tinder-style card stack for newly listed pets
-- Swipe right to "heart" → adds to Family Shortlist
-- Swipe left to skip
-- Cards show: pet photo/video, name, species, top Vibe tags, location radius
-
-### Grid Mode ("Browse All")
-- Multi-column responsive grid (1 col mobile, 3-4 cols desktop)
-- **Vibe Filters** as large tappable icons (not dropdowns) — kid-friendly
-- Additional filters: species, distance radius, age range
-- Toggle between Swipe and Grid views
-
----
-
-## 4. Pet Profile Page
-
-### Mobile
-- Full-width photo/video gallery (swipeable) at top
-- Pet name, species, age, Vibe tags as colorful badges
-- "Verified Health Badge" indicator
-- Compatibility Meter (visual bar comparing pet traits to user preferences)
-- Bio section (with personality and quirky fun facts)
-- Rehoming reason (displayed empathetically)
-- Sticky "Apply to Adopt" button at bottom
-
-### Desktop
-- Split-screen: media gallery left, sticky details + Apply button right
-
----
-
-## 5. User Profiles & Roles
-
-### Adopter Profile
-- Name, location (radius only), home type, family size
-- Preferences (species, energy level, yard availability)
-- Photo gallery of home environment
-- "Trust Score" badge (mock value for MVP)
-- Favorites / Family Shortlist
-
-### Rehomer Profile
-- Same base profile + ability to create Pet Listings
-- Listing management: view applications, change pet status
-- "Verified Rehomer" badge
-
-### Admin Dashboard
-- User management: view accounts, flag/suspend
-- Pet listing moderation queue
-- Dispute overview (placeholder UI for future escrow disputes)
-- Simple stats: total users, active listings, pending applications
-
----
-
-## 6. Pet Listing Creation (Rehomer Flow)
-- Step-by-step wizard:
-  1. **Species & basics** (name, age, breed/type)
-  2. **Vibes** — select personality tags from icon grid
-  3. **Photos/Videos** — upload media (mock upload in MVP)
-  4. **Rehoming reason** — empathetic category selector + optional story
-  5. **Review & Publish**
-- AI "Bio Generator" button — generates a fun, quirky pet bio (mock/placeholder)
-
----
-
-## 7. Application Flow
-
-### Adopter Side
-- "Apply to Adopt" → short form with screening questions
-- Application status tracker: Draft → Submitted → Under Review → Shortlisted → Approved / Declined
-- Notification when status changes
-
-### Rehomer Side
-- Application inbox per pet listing
-- View adopter's Trust Score, home profile, and screening answers
-- Actions: Shortlist, Accept for Chat, Decline
-- "Pet Personality Quiz" — send a fun quiz to applicants (mock)
-
----
-
-## 8. In-App Messaging (Inbox)
-- Consent-based: chat only unlocks after application is "Accepted for Chat"
-- Conversation list with pet context (which pet the chat is about)
-- Meet-and-Greet scheduler — pick a date/time directly in chat
-- Both parties can "Check-in" to confirm the meeting happened
-- Messages are mock/local state for MVP
-
----
-
-## 9. Family Shortlist ("My Derps")
-- Shared favorites board
-- Heart pets from Swipe or Grid to add
-- Side-by-side comparison view on desktop
-- Family member avatars showing who favorited what
-
----
-
-## 10. Fun "Derp" Touches
-- **"Gotcha Day" countdown** — celebratory confetti animation when adoption is marked complete
-- **Playful empty states** — cartoon derpy animals when no results found
-- **"Wag" notification style** — bouncy animation on new message badges
-- **Branded security section** — "Doghouse Rules" instead of "Security Settings"
-
----
-
-## 11. Mock Data
-- ~15-20 pre-built pet profiles across species (dogs, cats, birds, reptiles)
-- 3-4 sample user profiles matching the personas (Felix, Fiona, Paul)
-- Sample applications in various statuses
-- Sample chat conversations
-
----
-
-## Tech Approach
-- React + TypeScript with React Router for multi-page navigation
-- Tailwind CSS with custom Derps design tokens
-- Shadcn/UI components customized to the warm aesthetic
-- Framer Motion or CSS animations for micro-interactions
-- All data in local state/mock — ready to connect Supabase later
-
+- All colors stay as semantic tokens (`bg-card`, `text-foreground`, `ring-border`) — no hardcoded hex or `bg-white`.
+- The chip uses `bg-card` (not `bg-background`) so it reads as an elevated surface consistent with the rest of the card system.
+- No changes to `matching.ts`, `PlaydateCard.tsx`, or the grid layout in `Index.tsx`.

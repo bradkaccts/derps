@@ -25,9 +25,16 @@ export function MatchScoreBadge({ score, label, emoji, size = "md", className }:
   const svgSize = size === "sm" ? 48 : size === "lg" ? 80 : 64;
   const center = svgSize / 2;
 
+  const labelSize = size === "sm" ? "text-[10px]" : "text-xs";
+
   return (
     <div className={cn("flex flex-col items-center gap-1", className)}>
-      <div className={cn("relative", dims)}>
+      <div
+        className={cn(
+          "relative rounded-full bg-card shadow-md ring-1 ring-border",
+          dims
+        )}
+      >
         <svg width={svgSize} height={svgSize} className="rotate-[-90deg]">
           <circle
             cx={center}
@@ -54,7 +61,12 @@ export function MatchScoreBadge({ score, label, emoji, size = "md", className }:
           {score}
         </span>
       </div>
-      <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">
+      <span
+        className={cn(
+          "rounded-full bg-card/95 backdrop-blur px-2 py-0.5 font-bold text-foreground shadow-sm ring-1 ring-border/60 whitespace-nowrap",
+          labelSize
+        )}
+      >
         {emoji} {label}
       </span>
     </div>
