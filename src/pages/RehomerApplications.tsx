@@ -22,7 +22,7 @@ const statusColor: Record<ApplicationStatus, string> = {
 };
 
 const RehomerApplications = () => {
-  const { applications, updateStatus } = useApplications();
+  const { applications, updateStatus, allowedNextStatuses } = useApplications();
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -97,7 +97,7 @@ const RehomerApplications = () => {
                   View Answers
                 </Button>
                 {actions
-                  .filter((a) => a.status !== app.status)
+                  .filter((a) => allowedNextStatuses(app).includes(a.status))
                   .map((a) => (
                     <Button
                       key={a.status}

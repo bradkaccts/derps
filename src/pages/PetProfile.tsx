@@ -48,11 +48,7 @@ const PetProfile = () => {
     if (!activePet) return;
     requestPlaydate({
       myPetId: activePet.id,
-      myPetName: activePet.name,
       targetPetId: pet.id,
-      targetPetName: pet.name,
-      targetPetPhoto: pet.photos[0],
-      targetOwnerName: pet.rehomerId === "u2" ? "Fiona Rehomer" : "Paul Rehomer",
     });
     toast.success(`Derpdate request sent to ${pet.name}! 🐾`);
   };
@@ -177,11 +173,13 @@ const PetProfile = () => {
             <p className="text-sm text-secondary-foreground">{pet.funFact}</p>
           </div>
 
-          {/* Rehoming Reason */}
-          <div className="mb-8">
-            <h3 className="text-sm font-bold text-muted-foreground mb-1">💛 Why rehoming</h3>
-            <p className="text-sm text-foreground">{pet.rehomingReason}</p>
-          </div>
+          {/* Rehoming Reason (adoption listings only) */}
+          {pet.adoptionListing && (
+            <div className="mb-8">
+              <h3 className="text-sm font-bold text-muted-foreground mb-1">💛 Why rehoming</h3>
+              <p className="text-sm text-foreground">{pet.adoptionListing.rehomingReason}</p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="sticky bottom-20 md:bottom-4 space-y-3">

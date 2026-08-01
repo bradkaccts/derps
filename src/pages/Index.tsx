@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 
 import { Link } from "react-router-dom";
-import { mockPets, type Species, type VibeTag } from "@/data/mock-pets";
+import { mockPets, isListedForAdoption, isOpenToPlaydates, type Species, type VibeTag } from "@/data/mock-pets";
 import { PetCard } from "@/components/pets/PetCard";
 import { PlaydateCard } from "@/components/pets/PlaydateCard";
 import { DerpyEmpty } from "@/components/ui/derpy-states";
@@ -67,14 +67,14 @@ const Index = () => {
 
   const swipePets = useMemo(() => {
     return filteredPets.filter(
-      (pet) => pet.status === "available" && !favorites.has(pet.id) && !skipped.has(pet.id)
+      (pet) => isListedForAdoption(pet) && !favorites.has(pet.id) && !skipped.has(pet.id)
     );
   }, [filteredPets, favorites, skipped]);
 
   const rankedPets = useMemo(() => {
     if (!activePet) return [];
     const candidates = filteredPets.filter(
-      (p) => p.status === "available" && (distanceCap === 0 || p.distanceKm <= distanceCap)
+      (p) => isOpenToPlaydates(p) && p.ownerId !== activePet.ownerId && (distanceCap === 0 || p.distanceKm <= distanceCap)
     );
     const ranked = rankByCompatibility(activePet, candidates);
     if (sortMode === "nearest") {

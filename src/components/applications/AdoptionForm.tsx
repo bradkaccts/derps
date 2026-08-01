@@ -38,7 +38,7 @@ export function AdoptionForm({ pet, open, onOpenChange }: AdoptionFormProps) {
     submitApplication({
       petId: pet.id,
       adopterId: currentUser.id,
-      rehomerId: pet.rehomerId,
+      rehomerId: pet.ownerId,
       screeningAnswers: answers,
     });
     setSubmitted(true);

@@ -27,11 +27,7 @@ export function PlaydateCard({ pet, match }: PlaydateCardProps) {
     if (!activePet) return;
     requestPlaydate({
       myPetId: activePet.id,
-      myPetName: activePet.name,
       targetPetId: pet.id,
-      targetPetName: pet.name,
-      targetPetPhoto: pet.photos[0],
-      targetOwnerName: pet.rehomerId === "u2" ? "Fiona Rehomer" : "Paul Rehomer",
     });
     toast.success(`Derpdate request sent to ${pet.name}! 🐾`);
   };

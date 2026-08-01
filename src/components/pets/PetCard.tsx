@@ -48,7 +48,7 @@ export function PetCard({ pet, onFavorite, isFavorited = false }: PetCardProps) 
               Verified
             </div>
           )}
-          {pet.status === "pending" && (
+          {pet.adoptionListing?.status === "pending" && (
             <div className="absolute top-2 right-2 rounded-full bg-accent/90 px-2 py-0.5 text-xs font-bold text-accent-foreground">
               Pending
             </div>
@@ -60,7 +60,9 @@ export function PetCard({ pet, onFavorite, isFavorited = false }: PetCardProps) 
           <Link to={`/pet/${pet.id}`} className="flex-1">
             <h3 className="text-lg font-bold text-foreground">{pet.name}</h3>
             <p className="text-sm text-muted-foreground">{pet.breed} · {pet.age}</p>
-            <p className="text-sm font-bold text-primary">${pet.adoptionFee}</p>
+            {pet.adoptionListing && (
+              <p className="text-sm font-bold text-primary">${pet.adoptionListing.fee}</p>
+            )}
           </Link>
           <Button
             variant="ghost"

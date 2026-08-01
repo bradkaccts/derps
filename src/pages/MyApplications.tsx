@@ -39,7 +39,7 @@ const MyApplications = () => {
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-foreground truncate">{pet.name}</h3>
-                    <Badge variant="secondary" className="text-xs shrink-0">${pet.adoptionFee}</Badge>
+                    <Badge variant="secondary" className="text-xs shrink-0">${pet.adoptionListing?.fee ?? 0}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{pet.breed} · Applied {app.createdAt}</p>
                   <ApplicationStatusTracker status={app.status} />

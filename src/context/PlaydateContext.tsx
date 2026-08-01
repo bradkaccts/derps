@@ -1,13 +1,20 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import {
+  getDataProvider,
+  type HydratedInteraction,
+  type InteractionMessage,
+  type PlaydateSchedule,
+} from "@/lib/data";
 
 export type PlaydateStatus = "requested" | "accepted" | "scheduled" | "completed" | "declined";
+export type PlaydateChatMessage = InteractionMessage;
+export type { PlaydateSchedule };
 
-export interface PlaydateSchedule {
-  date: string;
-  time: string;
-  location: string;
-}
-
+/**
+ * UI view-model over a hydrated playdate Interaction, preserving the field
+ * names the existing components render. Normalized truth lives in the
+ * provider; this is a read-time projection.
+ */
 export interface PlaydateRequest {
   id: string;
   myPetId: string;
@@ -21,26 +28,36 @@ export interface PlaydateRequest {
   message?: string;
   schedule?: PlaydateSchedule;
   chatMessages: PlaydateChatMessage[];
+  /** Whether the current user initiated this request. */
+  direction: "outgoing" | "incoming";
 }
 
-export interface PlaydateChatMessage {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
+function toViewModel(interaction: HydratedInteraction, currentUserId: string): PlaydateRequest {
+  const outgoing = interaction.requesterUserId === currentUserId;
+  const myPet = outgoing ? interaction.requesterPet : interaction.targetPet;
+  const otherPet = outgoing ? interaction.targetPet : interaction.requesterPet;
+  const otherUser = outgoing ? interaction.targetUser : interaction.requesterUser;
+  const firstUserMessage = interaction.messages.find((m) => m.senderId !== "system");
+  return {
+    id: interaction.id,
+    myPetId: myPet?.id ?? "",
+    myPetName: myPet?.name ?? "",
+    targetPetId: otherPet?.id ?? "",
+    targetPetName: otherPet?.name ?? "",
+    targetPetPhoto: otherPet?.photos[0] ?? "",
+    targetOwnerName: otherUser?.name ?? "",
+    status: interaction.status as PlaydateStatus,
+    createdAt: interaction.createdAt,
+    message: firstUserMessage?.text,
+    schedule: interaction.schedule,
+    chatMessages: interaction.messages,
+    direction: outgoing ? "outgoing" : "incoming",
+  };
 }
 
 interface PlaydateContextValue {
   requests: PlaydateRequest[];
-  requestPlaydate: (params: {
-    myPetId: string;
-    myPetName: string;
-    targetPetId: string;
-    targetPetName: string;
-    targetPetPhoto: string;
-    targetOwnerName: string;
-    message?: string;
-  }) => void;
+  requestPlaydate: (params: { myPetId: string; targetPetId: string; message?: string }) => void;
   updateStatus: (requestId: string, status: PlaydateStatus) => void;
   schedulePlaydate: (requestId: string, schedule: PlaydateSchedule) => void;
   sendPlaydateMessage: (requestId: string, text: string) => void;
@@ -52,91 +69,67 @@ interface PlaydateContextValue {
 const PlaydateContext = createContext<PlaydateContextValue | null>(null);
 
 export function PlaydateProvider({ children }: { children: ReactNode }) {
+  const provider = getDataProvider();
   const [requests, setRequests] = useState<PlaydateRequest[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
-  const requestPlaydate = useCallback((params: {
-    myPetId: string;
-    myPetName: string;
-    targetPetId: string;
-    targetPetName: string;
-    targetPetPhoto: string;
-    targetOwnerName: string;
-    message?: string;
-  }) => {
-    const newReq: PlaydateRequest = {
-      id: `pd-${Date.now()}`,
-      myPetId: params.myPetId,
-      myPetName: params.myPetName,
-      targetPetId: params.targetPetId,
-      targetPetName: params.targetPetName,
-      targetPetPhoto: params.targetPetPhoto,
-      targetOwnerName: params.targetOwnerName,
-      status: "requested",
-      createdAt: new Date().toISOString(),
-      message: params.message,
-      chatMessages: params.message
-        ? [{ id: `pm-${Date.now()}`, senderId: "u1", text: params.message, timestamp: new Date().toISOString() }]
-        : [],
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const user = await provider.getCurrentUser();
+      const interactions = await provider.getInteractionsForUser(user.id, "playdate");
+      if (cancelled) return;
+      setCurrentUserId(user.id);
+      setRequests(interactions.map((i) => toViewModel(i, user.id)));
     };
-    setRequests((prev) => [...prev, newReq]);
-  }, []);
+    load();
+    const unsubscribe = provider.subscribe(load);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [provider]);
 
-  const updateStatus = useCallback((requestId: string, status: PlaydateStatus) => {
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== requestId) return r;
-        const updated = { ...r, status };
-        // Auto-add system message
-        const statusMsg: PlaydateChatMessage = {
-          id: `pm-${Date.now()}`,
-          senderId: "system",
-          text: status === "accepted" ? "🎉 Derpdate accepted! Schedule a time below." 
-              : status === "declined" ? "😢 Derpdate declined."
-              : status === "scheduled" ? "📅 Derpdate scheduled!"
-              : status === "completed" ? "✅ Derpdate completed! Hope they had fun!" 
-              : `Status updated to ${status}`,
-          timestamp: new Date().toISOString(),
-        };
-        updated.chatMessages = [...r.chatMessages, statusMsg];
-        return updated;
-      })
-    );
-  }, []);
+  const requestPlaydate = useCallback(
+    (params: { myPetId: string; targetPetId: string; message?: string }) => {
+      void provider
+        .createPlaydateRequest({
+          requesterUserId: currentUserId,
+          requesterPetId: params.myPetId,
+          targetPetId: params.targetPetId,
+          message: params.message,
+        })
+        .catch((err) => console.error("Failed to request playdate:", err));
+    },
+    [provider, currentUserId]
+  );
 
-  const schedulePlaydate = useCallback((requestId: string, schedule: PlaydateSchedule) => {
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== requestId) return r;
-        const scheduleMsg: PlaydateChatMessage = {
-          id: `pm-${Date.now()}`,
-          senderId: "u1",
-          text: `📅 Scheduled for ${schedule.date} at ${schedule.time} — ${schedule.location}`,
-          timestamp: new Date().toISOString(),
-        };
-        return {
-          ...r,
-          status: "scheduled" as PlaydateStatus,
-          schedule,
-          chatMessages: [...r.chatMessages, scheduleMsg],
-        };
-      })
-    );
-  }, []);
+  const updateStatus = useCallback(
+    (requestId: string, status: PlaydateStatus) => {
+      void provider
+        .updateInteractionStatus(requestId, status)
+        .catch((err) => console.error("Failed to update playdate:", err));
+    },
+    [provider]
+  );
 
-  const sendPlaydateMessage = useCallback((requestId: string, text: string) => {
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== requestId) return r;
-        const msg: PlaydateChatMessage = {
-          id: `pm-${Date.now()}`,
-          senderId: "u1",
-          text,
-          timestamp: new Date().toISOString(),
-        };
-        return { ...r, chatMessages: [...r.chatMessages, msg] };
-      })
-    );
-  }, []);
+  const schedulePlaydate = useCallback(
+    (requestId: string, schedule: PlaydateSchedule) => {
+      void provider
+        .schedulePlaydate(requestId, schedule)
+        .catch((err) => console.error("Failed to schedule playdate:", err));
+    },
+    [provider]
+  );
+
+  const sendPlaydateMessage = useCallback(
+    (requestId: string, text: string) => {
+      void provider
+        .sendInteractionMessage(requestId, currentUserId, text)
+        .catch((err) => console.error("Failed to send message:", err));
+    },
+    [provider, currentUserId]
+  );
 
   const getRequestForPet = useCallback(
     (targetPetId: string) => requests.find((r) => r.targetPetId === targetPetId),
@@ -147,7 +140,9 @@ export function PlaydateProvider({ children }: { children: ReactNode }) {
   const acceptedCount = requests.filter((r) => r.status === "accepted" || r.status === "scheduled").length;
 
   return (
-    <PlaydateContext.Provider value={{ requests, requestPlaydate, updateStatus, schedulePlaydate, sendPlaydateMessage, getRequestForPet, pendingCount, acceptedCount }}>
+    <PlaydateContext.Provider
+      value={{ requests, requestPlaydate, updateStatus, schedulePlaydate, sendPlaydateMessage, getRequestForPet, pendingCount, acceptedCount }}
+    >
       {children}
     </PlaydateContext.Provider>
   );

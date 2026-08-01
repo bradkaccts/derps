@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { currentUser } from "@/data/mock-users";
+import type { User } from "@/lib/data";
+
+/** Human labels for a user's capability flags (polymorphic roles). */
+function roleLabels(user: User): string[] {
+  const labels: string[] = [];
+  if (user.isSocializer) labels.push("socializer");
+  if (user.isAdopter) labels.push("adopter");
+  if (user.isRehomer) labels.push("rehomer");
+  if (user.isAdmin) labels.push("admin");
+  return labels.length > 0 ? labels : ["member"];
+}
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -121,9 +132,11 @@ const Profile = () => {
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">{currentUser.name}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="secondary" className="capitalize font-semibold">
-              {currentUser.role}
-            </Badge>
+            {roleLabels(currentUser).map((label) => (
+              <Badge key={label} variant="secondary" className="capitalize font-semibold">
+                {label}
+              </Badge>
+            ))}
             {currentUser.verified && (
               <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                 <ShieldCheck className="h-3 w-3" /> Verified

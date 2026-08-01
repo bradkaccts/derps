@@ -66,7 +66,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           return false;
         if (preferences.genders.length > 0 && !preferences.genders.includes(pet.gender))
           return false;
-        if (pet.adoptionFee > preferences.maxAdoptionFee) return false;
+        if ((pet.adoptionListing?.fee ?? 0) > preferences.maxAdoptionFee) return false;
         if (pet.distanceKm > preferences.maxDistanceKm) return false;
         if (preferences.healthVerifiedOnly && !pet.healthVerified) return false;
         return true;

@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import {
+  canTransition,
+  getDataProvider,
+  type HydratedInteraction,
+  type ScreeningAnswers,
+} from "@/lib/data";
+
+export type { ScreeningAnswers };
 
 export type ApplicationStatus =
   | "draft"
@@ -8,16 +16,7 @@ export type ApplicationStatus =
   | "approved"
   | "declined";
 
-export interface ScreeningAnswers {
-  homeType: string;
-  hasYard: boolean;
-  otherPets: string;
-  children: string;
-  experience: string;
-  hoursAlone: string;
-  reason: string;
-}
-
+/** UI view-model over an adoption-application Interaction. */
 export interface Application {
   id: string;
   petId: string;
@@ -29,31 +28,33 @@ export interface Application {
   updatedAt: string;
 }
 
-const seedApplications: Application[] = [
-  {
-    id: "app-1",
-    petId: "p8",
-    adopterId: "u1",
-    rehomerId: "u3",
-    status: "shortlisted",
-    screeningAnswers: {
-      homeType: "House with yard",
-      hasYard: true,
-      otherPets: "One friendly dog",
-      children: "Two kids, ages 8 and 11",
-      experience: "Had cats growing up",
-      hoursAlone: "4-6 hours",
-      reason: "Looking for a calm companion for the family",
+function toViewModel(interaction: HydratedInteraction): Application {
+  return {
+    id: interaction.id,
+    petId: interaction.targetPetId,
+    adopterId: interaction.requesterUserId,
+    rehomerId: interaction.targetUserId,
+    status: interaction.status as ApplicationStatus,
+    screeningAnswers: interaction.screeningAnswers ?? {
+      homeType: "",
+      hasYard: false,
+      otherPets: "",
+      children: "",
+      experience: "",
+      hoursAlone: "",
+      reason: "",
     },
-    createdAt: "2026-02-12",
-    updatedAt: "2026-02-14",
-  },
-];
+    createdAt: interaction.createdAt.split("T")[0],
+    updatedAt: interaction.updatedAt.split("T")[0],
+  };
+}
 
 interface ApplicationContextType {
   applications: Application[];
-  submitApplication: (app: Omit<Application, "id" | "createdAt" | "updatedAt" | "status">) => void;
+  submitApplication: (app: { petId: string; adopterId: string; rehomerId: string; screeningAnswers: ScreeningAnswers }) => void;
   updateStatus: (appId: string, status: ApplicationStatus) => void;
+  /** Statuses this application may legally move to (drives action buttons). */
+  allowedNextStatuses: (app: Application) => ApplicationStatus[];
   getApplicationsForPet: (petId: string) => Application[];
   getApplicationsForAdopter: (adopterId: string) => Application[];
   getApplicationForPetByAdopter: (petId: string, adopterId: string) => Application | undefined;
@@ -61,37 +62,74 @@ interface ApplicationContextType {
 
 const ApplicationContext = createContext<ApplicationContextType | null>(null);
 
+const ALL_STATUSES: ApplicationStatus[] = ["draft", "submitted", "under-review", "shortlisted", "approved", "declined"];
+
 export function ApplicationProvider({ children }: { children: ReactNode }) {
-  const [applications, setApplications] = useState<Application[]>(seedApplications);
+  const provider = getDataProvider();
+  const [applications, setApplications] = useState<Application[]>([]);
 
-  const submitApplication = (app: Omit<Application, "id" | "createdAt" | "updatedAt" | "status">) => {
-    const now = new Date().toISOString().split("T")[0];
-    const newApp: Application = {
-      ...app,
-      id: `app-${Date.now()}`,
-      status: "submitted",
-      createdAt: now,
-      updatedAt: now,
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const user = await provider.getCurrentUser();
+      const interactions = await provider.getInteractionsForUser(user.id, "adoption-application");
+      if (cancelled) return;
+      setApplications(interactions.map(toViewModel));
     };
-    setApplications((prev) => [...prev, newApp]);
-  };
+    load();
+    const unsubscribe = provider.subscribe(load);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [provider]);
 
-  const updateStatus = (appId: string, status: ApplicationStatus) => {
-    setApplications((prev) =>
-      prev.map((a) =>
-        a.id === appId ? { ...a, status, updatedAt: new Date().toISOString().split("T")[0] } : a
-      )
-    );
-  };
+  const submitApplication = useCallback(
+    (app: { petId: string; adopterId: string; rehomerId: string; screeningAnswers: ScreeningAnswers }) => {
+      void provider
+        .createAdoptionApplication({
+          requesterUserId: app.adopterId,
+          targetPetId: app.petId,
+          screeningAnswers: app.screeningAnswers,
+        })
+        .catch((err) => console.error("Failed to submit application:", err));
+    },
+    [provider]
+  );
 
-  const getApplicationsForPet = (petId: string) => applications.filter((a) => a.petId === petId);
-  const getApplicationsForAdopter = (adopterId: string) => applications.filter((a) => a.adopterId === adopterId);
-  const getApplicationForPetByAdopter = (petId: string, adopterId: string) =>
-    applications.find((a) => a.petId === petId && a.adopterId === adopterId);
+  const updateStatus = useCallback(
+    (appId: string, status: ApplicationStatus) => {
+      void provider
+        .updateInteractionStatus(appId, status)
+        .catch((err) => console.error("Failed to update application:", err));
+    },
+    [provider]
+  );
+
+  const allowedNextStatuses = useCallback(
+    (app: Application) => ALL_STATUSES.filter((s) => canTransition("adoption-application", app.status, s)),
+    []
+  );
+
+  const getApplicationsForPet = useCallback(
+    (petId: string) => applications.filter((a) => a.petId === petId),
+    [applications]
+  );
+
+  const getApplicationsForAdopter = useCallback(
+    (adopterId: string) => applications.filter((a) => a.adopterId === adopterId),
+    [applications]
+  );
+
+  const getApplicationForPetByAdopter = useCallback(
+    (petId: string, adopterId: string) =>
+      applications.find((a) => a.petId === petId && a.adopterId === adopterId),
+    [applications]
+  );
 
   return (
     <ApplicationContext.Provider
-      value={{ applications, submitApplication, updateStatus, getApplicationsForPet, getApplicationsForAdopter, getApplicationForPetByAdopter }}
+      value={{ applications, submitApplication, updateStatus, allowedNextStatuses, getApplicationsForPet, getApplicationsForAdopter, getApplicationForPetByAdopter }}
     >
       {children}
     </ApplicationContext.Provider>
