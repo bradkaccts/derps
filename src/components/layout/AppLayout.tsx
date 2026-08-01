@@ -1,14 +1,15 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake } from "lucide-react";
+import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake, MapPin, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
-import { usePlaydates } from "@/context/PlaydateContext";
+import { useMatches } from "@/context/playdates/PlaydatesProvider";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home },
+  { path: "/playdates", label: "Derpdates", icon: HeartHandshake },
   { path: "/inbox", label: "Inbox", icon: MessageCircle },
   { path: "/my-derps", label: "My Derps", icon: Heart },
   { path: "/profile", label: "Profile", icon: User },
@@ -18,7 +19,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { totalUnread } = useMessaging();
-  const { pendingCount } = usePlaydates();
+  const { awaitingReplyCount } = useMatches();
+
+  const badgeFor = (path: string) => {
+    if (path === "/inbox") return totalUnread;
+    if (path === "/playdates") return awaitingReplyCount;
+    return 0;
+  };
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -33,8 +40,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const showBadge = item.path === "/inbox" && totalUnread > 0;
+              const isActive =
+                item.path === "/playdates"
+                  ? location.pathname.startsWith("/playdates")
+                  : location.pathname === item.path;
+              const badge = badgeFor(item.path);
               return (
                 <Link
                   key={item.path}
@@ -48,9 +58,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
-                  {showBadge && (
+                  {badge > 0 && (
                     <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold animate-wag">
-                      {totalUnread}
+                      {badge}
                     </span>
                   )}
                 </Link>
@@ -72,21 +82,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Button>
             </div>
 
-            {/* Derpdates quick link */}
-            <div className="mt-4">
-              <Button
-                asChild
-                variant="outline"
-                className="w-full gap-2 font-semibold justify-start relative"
-              >
-                <Link to="/?view=playdates">
-                  <HeartHandshake className="h-4 w-4" />
-                  Derpdates
-                  {pendingCount > 0 && (
-                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold animate-wag">
-                      {pendingCount}
-                    </span>
-                  )}
+            {/* Derpdates sub-surfaces */}
+            <div className="mt-4 space-y-2">
+              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                <Link to="/playdates/venues">
+                  <MapPin className="h-4 w-4" />
+                  Places to Meet
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                <Link to="/playdates/safety">
+                  <LifeBuoy className="h-4 w-4" />
+                  Safety Center
                 </Link>
               </Button>
             </div>
@@ -117,22 +124,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 safe-bottom">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const showBadge = item.path === "/inbox" && totalUnread > 0;
+              const isActive =
+                item.path === "/playdates"
+                  ? location.pathname.startsWith("/playdates")
+                  : location.pathname === item.path;
+              const badge = badgeFor(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "relative flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-semibold transition-colors",
+                    "relative flex min-h-[44px] flex-col items-center gap-0.5 px-2.5 py-1 text-[11px] font-semibold transition-colors",
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >
                   <div className="relative">
                     <item.icon className={cn("h-5 w-5", isActive && "animate-wag")} />
-                    {showBadge && (
+                    {badge > 0 && (
                       <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[10px] font-bold animate-wag">
-                        {totalUnread}
+                        {badge}
                       </span>
                     )}
                   </div>

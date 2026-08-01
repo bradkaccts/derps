@@ -18,7 +18,8 @@ const felixPet: MyPet = {
   bio: "Nugget is a wiggle-butt extraordinaire who loves making new friends at the park.",
   funFact: "Does a full-body shake every time he meets a new dog.",
   rehomingReason: "",
-  location: "Portland, OR",
+  // Ventura is the Playdates launch metro (§13.8), so the demo account lives there.
+  location: "Ventura, CA",
   distanceKm: 0,
   photos: ["https://images.unsplash.com/photo-1612536057832-2ff7ead58194?w=600&h=600&fit=crop"],
   healthVerified: true,

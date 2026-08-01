@@ -199,4 +199,32 @@
   .btn-bouncy:hover {
     transform: scale(1.03);
   }
+
+  /* UI-707 — motion-heavy micro-interactions respect prefers-reduced-motion.
+     The wiggle and bounce are the brand; for some people they are also a
+     migraine, so the whole system collapses to opacity-only transitions. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-wiggle,
+    .animate-bounce-in,
+    .animate-wag,
+    .animate-float,
+    .animate-heart-pop,
+    .animate-slide-up,
+    .animate-stagger > * {
+      animation: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+
+    .animate-pulse-soft {
+      animation: none !important;
+    }
+
+    .btn-bouncy,
+    .btn-bouncy:hover,
+    .btn-bouncy:active {
+      transition: none;
+      transform: none;
+    }
+  }
 }

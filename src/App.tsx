@@ -10,7 +10,13 @@ import { MessagingProvider } from "@/context/MessagingContext";
 import { ApplicationProvider } from "@/context/ApplicationContext";
 import { MyPetsProvider } from "@/context/MyPetsContext";
 import { PlaydateProvider } from "@/context/PlaydateContext";
+import { PlaydatesProvider } from "@/context/playdates/PlaydatesProvider";
 import Index from "./pages/Index";
+import PlaydatesFeed from "./pages/PlaydatesFeed";
+import PlaydateQuiz from "./pages/PlaydateQuiz";
+import PlaydateMatches from "./pages/PlaydateMatches";
+import PlaydateVenues from "./pages/PlaydateVenues";
+import PlaydateSafety from "./pages/PlaydateSafety";
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
 import MyDerps from "./pages/MyDerps";
@@ -34,19 +40,28 @@ const App = () => (
               <ApplicationProvider>
                 <MyPetsProvider>
                   <PlaydateProvider>
-                    <AppLayout>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/pet/:id" element={<PetProfile />} />
-                        <Route path="/inbox" element={<Inbox />} />
-                        <Route path="/my-derps" element={<MyDerps />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/create-listing" element={<CreateListing />} />
-                        <Route path="/my-applications" element={<MyApplications />} />
-                        <Route path="/applications-inbox" element={<RehomerApplications />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </AppLayout>
+                    <PlaydatesProvider>
+                      <AppLayout>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/pet/:id" element={<PetProfile />} />
+                          <Route path="/inbox" element={<Inbox />} />
+                          <Route path="/my-derps" element={<MyDerps />} />
+                          <Route path="/profile" element={<Profile />} />
+                          <Route path="/create-listing" element={<CreateListing />} />
+                          <Route path="/my-applications" element={<MyApplications />} />
+                          <Route path="/applications-inbox" element={<RehomerApplications />} />
+                          {/* Derps Playdates — pet-to-pet social matching */}
+                          <Route path="/playdates" element={<PlaydatesFeed />} />
+                          <Route path="/playdates/quiz/:petId" element={<PlaydateQuiz />} />
+                          <Route path="/playdates/matches" element={<PlaydateMatches />} />
+                          <Route path="/playdates/matches/:matchId" element={<PlaydateMatches />} />
+                          <Route path="/playdates/venues" element={<PlaydateVenues />} />
+                          <Route path="/playdates/safety" element={<PlaydateSafety />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </AppLayout>
+                    </PlaydatesProvider>
                   </PlaydateProvider>
                 </MyPetsProvider>
               </ApplicationProvider>
