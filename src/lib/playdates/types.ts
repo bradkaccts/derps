@@ -569,3 +569,59 @@ export interface Impression {
   shownAt: string;
   dwellMs: number | null;
 }
+
+/* ------------------------------------------------------------------ *
+ * Venue confirmation signals (VC-* series)
+ *
+ * Presence-gated observations captured at check-in. Nothing here is ever
+ * attributed to a person in any user-facing surface (VC-324/VC-602).
+ * ------------------------------------------------------------------ */
+
+/** The observable subset of `VenueAmenity` — answerable from one vantage point (VC-111). */
+export type VenueAttributeKey = Extract<
+  VenueAmenity,
+  "parking" | "restrooms" | "water" | "shade" | "separate_small_dog_area" | "lighting" | "fenced"
+>;
+
+export type VenueObservationValue = "yes" | "no" | "unsure";
+
+export type VenueAttributeClass = "standard" | "safety_critical";
+
+/** VC-601 — immutable and append-only; supersession happens at aggregation time. */
+export interface VenueObservation {
+  id: string;
+  venueId: string;
+  attributeKey: VenueAttributeKey;
+  value: VenueObservationValue;
+  userId: string;
+  meetupId: string;
+  observedAt: string;
+}
+
+/** VC-112/VC-604 — configuration, not code. */
+export interface VenueAttributeDefinition {
+  attributeKey: VenueAttributeKey;
+  questionText: string;
+  class: VenueAttributeClass;
+  halfLifeDays: number;
+  applicableVenueTypes: VenueType[];
+  enabled: boolean;
+}
+
+export type VenueConfidenceState = "unknown" | "reported" | "confirmed" | "disputed" | "stale";
+
+export interface VenueAttributeAggregate {
+  attributeKey: VenueAttributeKey;
+  state: VenueConfidenceState;
+  /** The side the evidence points to; null when there is nothing to point with. */
+  value: "yes" | "no" | null;
+  wYes: number;
+  wNo: number;
+  wTot: number;
+  agreement: number;
+  nDistinct: number;
+  nYesUsers: number;
+  nNoUsers: number;
+  nMeetupEvents: number;
+  lastObservedAt: string | null;
+}
