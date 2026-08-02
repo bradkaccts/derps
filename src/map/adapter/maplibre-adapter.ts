@@ -159,8 +159,10 @@ export async function createMapLibreAdapter(
     const palette = paletteFor(theme);
     map.setPaintProperty("venue-geofence-fill", "fill-color", palette.geofenceFill);
     map.setPaintProperty("venue-geofence-line", "line-color", palette.geofenceLine);
+    map.setPaintProperty("venue-geofence-glow", "line-color", palette.geofenceLine);
     container.dataset.derpsMapVariant = theme;
   };
+
 
   const palette = paletteFor(variant);
 
