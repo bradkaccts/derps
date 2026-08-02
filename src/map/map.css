@@ -71,3 +71,31 @@
     transition: none;
   }
 }
+
+/* Geofence tooltip — explains the blurred home-area circle (MAP-612). */
+.derps-map-popup .maplibregl-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--derps-map-pin);
+  background: var(--derps-map-surface);
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.14);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.derps-map-popup .maplibregl-popup-tip {
+  border-top-color: var(--derps-map-surface);
+  border-bottom-color: var(--derps-map-surface);
+}
+
+.derps-map-popup-title {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.derps-map-popup-body {
+  opacity: 0.85;
+}
