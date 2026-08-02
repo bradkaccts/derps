@@ -92,6 +92,7 @@ export async function createMapLibreAdapter(
   const listeners: Listeners = {
     selectVenue: new Set(),
     cameraChange: new Set(),
+    clustersChanged: new Set(),
     error: new Set(),
   };
 
@@ -292,6 +293,7 @@ export async function createMapLibreAdapter(
   };
 
   const CLUSTER_PX = 56;
+  let hasClusters = false;
 
   const syncMarkers = () => {
     if (destroyed) return;
@@ -340,6 +342,12 @@ export async function createMapLibreAdapter(
         : makePin(group.venues[0]);
       if (!isCluster && group.venues[0].id === selectedId) el.dataset.selected = "true";
       markers.set(key, new Marker({ element: el }).setLngLat(coords).addTo(map));
+    }
+
+    const nextHasClusters = groups.some((g) => g.venues.length > 1);
+    if (nextHasClusters !== hasClusters) {
+      hasClusters = nextHasClusters;
+      emit("clustersChanged", hasClusters);
     }
 
     for (const [key, marker] of markers) {
