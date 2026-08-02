@@ -227,7 +227,7 @@ function SwipeCard({ pet, isTop, stackIndex, onSwipe, exitDirection }: SwipeCard
             </div>
           )}
         </div>
-      </Link>
+      </div>
 
       {/* Info */}
       <div className="p-4">
