@@ -37,7 +37,12 @@ export interface MapVenueFeature {
 export interface GeofenceCircle {
   center: [lng: number, lat: number];
   radiusMeters: number;
+  /** Short title shown in the on-map tooltip. */
+  label?: string;
+  /** One-line explanation of what the circle represents. */
+  description?: string;
 }
+
 
 export interface MapAdapterEvents {
   selectVenue: (id: string | null) => void;
