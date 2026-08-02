@@ -79,6 +79,12 @@ export function recommendVenue(
   venue: Venue,
   petA: PetTraitVector,
   petB: PetTraitVector,
+  /**
+   * VC-313 — when visitor confirmation is available it supersedes the static
+   * amenity flag, and anything short of a confirmed "yes" is treated as
+   * unfenced. Omitted means "no signal", which falls back to the flag.
+   */
+  fencedConfirmation?: { confirmedFenced: boolean; disputed: boolean },
 ): VenueRecommendation {
   const notes: string[] = [];
   let suitable = true;
@@ -102,8 +108,15 @@ export function recommendVenue(
     }
   }
 
-  if (!venue.amenities.includes("fenced") && weakestRecall <= 3) {
-    notes.push("Unfenced — leashes on until everyone settles.");
+  const fenced = fencedConfirmation
+    ? fencedConfirmation.confirmedFenced
+    : venue.amenities.includes("fenced");
+  if (!fenced && weakestRecall <= 3) {
+    notes.push(
+      fencedConfirmation?.disputed
+        ? "Visitors disagree about whether this is fully fenced — treat it as unfenced and keep leashes on."
+        : "Unfenced — leashes on until everyone settles.",
+    );
   }
 
   // MP-412 — venue-level safety context.

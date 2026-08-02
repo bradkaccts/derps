@@ -4,6 +4,7 @@ import { SafetyProvider } from "./SafetyContext";
 import { SwipeProvider } from "./SwipeContext";
 import { MatchProvider } from "./MatchContext";
 import { MeetupProvider } from "./MeetupContext";
+import { VenueConfidenceProvider } from "./VenueConfidenceContext";
 
 /**
  * Composes the Playdates module's stores into one provider so `App.tsx` gains
@@ -19,7 +20,9 @@ export function PlaydatesProvider({ children }: { children: ReactNode }) {
       <PetPersonalityProvider>
         <SwipeProvider>
           <MatchProvider>
-            <MeetupProvider>{children}</MeetupProvider>
+            <MeetupProvider>
+              <VenueConfidenceProvider>{children}</VenueConfidenceProvider>
+            </MeetupProvider>
           </MatchProvider>
         </SwipeProvider>
       </PetPersonalityProvider>
@@ -32,3 +35,4 @@ export { useSwipes } from "./SwipeContext";
 export { useMatches } from "./MatchContext";
 export { useMeetups } from "./MeetupContext";
 export { useSafety } from "./SafetyContext";
+export { useVenueConfidence } from "./VenueConfidenceContext";
