@@ -236,7 +236,7 @@ describe("display language (§5.4)", () => {
     );
     const line = provenanceLine(aggregate, NOW);
     expect(line).toMatch(/3 visitors/);
-    expect(line).toMatch(/days ago/);
+    expect(line).toMatch(/yesterday/);
     expect(line?.toLowerCase()).not.toContain("verified");
   });
 
