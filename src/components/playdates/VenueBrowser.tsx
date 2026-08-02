@@ -266,14 +266,6 @@ function VenueRow({
         })}
       </div>
 
-      {aggregates.length > 0 && (
-        <details className="mt-2 group">
-          <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground">
-            What visitors say about this place
-          </summary>
-          <VenueAttributeProvenance aggregates={aggregates} className="mt-1.5" />
-        </details>
-      )}
 
       {/* MP-412 — posted leash rules travel with the venue, always. */}
       <p className="mt-2 text-xs text-muted-foreground">
@@ -295,22 +287,46 @@ function VenueRow({
     </>
   );
 
+  /*
+   * Provenance sits outside the selection button on purpose: a disclosure
+   * control nested inside a button is unreachable by keyboard, and reading the
+   * evidence must never be the same gesture as choosing the venue.
+   */
+  const provenance = aggregates.length > 0 && (
+    <details className="mt-2">
+      <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground">
+        What visitors say about this place
+      </summary>
+      <VenueAttributeProvenance aggregates={aggregates} className="mt-1.5" />
+    </details>
+  );
+
   if (!onSelect) {
-    return <div className="rounded-xl border border-border bg-card p-3">{body}</div>;
+    return (
+      <div className="rounded-xl border border-border bg-card p-3">
+        {body}
+        {provenance}
+      </div>
+    );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(venue)}
-      disabled={recommendation ? !recommendation.suitable : false}
+    <div
       className={cn(
-        "btn-bouncy w-full rounded-xl border-2 bg-card p-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+        "rounded-xl border-2 bg-card transition-all",
         selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
       )}
     >
-      {body}
-    </button>
+      <button
+        type="button"
+        onClick={() => onSelect(venue)}
+        disabled={recommendation ? !recommendation.suitable : false}
+        className="btn-bouncy w-full rounded-xl p-3 text-left disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {body}
+      </button>
+      <div className="px-3 pb-3">{provenance}</div>
+    </div>
   );
 }
 
