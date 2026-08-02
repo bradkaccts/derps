@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
 import { Heart, X, MapPin, ShieldCheck } from "lucide-react";
 import { type Pet } from "@/data/mock-pets";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DerpyEmpty } from "@/components/ui/derpy-states";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface SwipeCardStackProps {
   pets: Pet[];
@@ -18,17 +18,22 @@ interface SwipeCardStackProps {
 export function SwipeCardStack({ pets, onSwipeRight, onSwipeLeft }: SwipeCardStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null);
+  const isAnimating = useRef(false);
 
   const handleSwipe = useCallback(
     (direction: "left" | "right") => {
+      // Guard: ignore repeat triggers while a card is animating out
+      if (isAnimating.current) return;
       if (currentIndex >= pets.length) return;
       const pet = pets[currentIndex];
+      isAnimating.current = true;
       setExitDirection(direction);
       setTimeout(() => {
         if (direction === "right") onSwipeRight(pet.id);
         else onSwipeLeft(pet.id);
         setCurrentIndex((prev) => prev + 1);
         setExitDirection(null);
+        isAnimating.current = false;
       }, 300);
     },
     [currentIndex, pets, onSwipeRight, onSwipeLeft]
@@ -43,6 +48,7 @@ export function SwipeCardStack({ pets, onSwipeRight, onSwipeLeft }: SwipeCardSta
       />
     );
   }
+
 
   // Show up to 3 cards stacked
   const visiblePets = pets.slice(currentIndex, currentIndex + 3);
