@@ -24,14 +24,26 @@ export interface BuildStyleOptions {
   glyphs?: string;
   /** Same-origin sprite base. */
   sprite?: string;
+  /** Raster basemap tiles. Defaults to the hosted CARTO basemap for the variant. */
+  rasterTiles?: string[] | null;
   center?: [number, number];
   zoom?: number;
   attribution?: string;
 }
 
+/** Keyless raster basemaps, tinted per variant so the map reads as a map. */
+const RASTER_BASEMAPS: Record<ThemeName, string> = {
+  day: "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  night: "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+  contrast: "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
+};
+
+export const RASTER_SOURCE_ID = "derps-basemap-raster";
+
 /** Launch metro (FRD §13.8) — Ventura/LA. */
 export const DEFAULT_CENTER: [number, number] = [-119.229, 34.2746];
 export const DEFAULT_ZOOM = 11.5;
+
 
 export function buildStyle(options: BuildStyleOptions): StyleSpec {
   const {
