@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check } from "lucide-react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+
 import { cn } from "@/lib/utils";
 import { mockVenues } from "@/data/mock-venues";
 import { DerpsMap } from "@/map/DerpsMap";
