@@ -47,6 +47,8 @@ export interface GeofenceCircle {
 export interface MapAdapterEvents {
   selectVenue: (id: string | null) => void;
   cameraChange: (camera: Camera) => void;
+  /** Fires when cluster bubbles appear or disappear at the current zoom. */
+  clustersChanged: (hasClusters: boolean) => void;
   error: (error: Error) => void;
 }
 

@@ -99,3 +99,36 @@
 .derps-map-popup-body {
   opacity: 0.85;
 }
+
+/* Always-visible map key (MAP-618). Swatches reuse the marker custom
+   properties so the legend can never drift from what the map draws. */
+.derps-map-legend-swatch {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid var(--derps-map-pin);
+  background: var(--derps-map-surface);
+}
+
+.derps-map-legend-swatch[data-kind="home"] {
+  border-style: dashed;
+  border-color: var(--derps-map-pin-selected);
+  background: color-mix(in srgb, var(--derps-map-pin-selected) 20%, transparent);
+}
+
+.derps-map-legend-swatch[data-kind="selected"] {
+  border-color: var(--derps-map-pin-selected);
+  border-width: 3px;
+}
+
+.derps-map-legend-swatch[data-kind="disabled"] {
+  border-color: var(--derps-map-pin-disabled);
+  opacity: 0.6;
+}
+
+.derps-map-legend-swatch[data-kind="cluster"] {
+  border-color: var(--derps-map-cluster);
+  background: var(--derps-map-cluster);
+}

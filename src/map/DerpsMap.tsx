@@ -36,6 +36,8 @@ export interface DerpsMapProps {
   fallback?: React.ReactNode;
   /** Chrome drawn over the canvas once ready — legends, keys, controls. */
   overlay?: React.ReactNode;
+  /** Fires when cluster bubbles appear or disappear, so a legend can adapt. */
+  onClustersChanged?: (hasClusters: boolean) => void;
 }
 
 
@@ -57,12 +59,14 @@ export function DerpsMap({
   label,
   fallback = null,
   overlay = null,
-
+  onClustersChanged,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<MapAdapter | null>(null);
   const selectRef = useRef(onSelectVenue);
   selectRef.current = onSelectVenue;
+  const clustersRef = useRef(onClustersChanged);
+  clustersRef.current = onClustersChanged;
 
   const [status, setStatus] = useState<"loading" | "ready" | "unsupported">("loading");
 
@@ -97,6 +101,7 @@ export function DerpsMap({
         }
         adapterRef.current = adapter;
         adapter.on("selectVenue", (id) => selectRef.current?.(id));
+        adapter.on("clustersChanged", (has) => clustersRef.current?.(has));
         setStatus("ready");
       } catch {
         if (!cancelled) setStatus("unsupported");
