@@ -4,7 +4,7 @@ import { buildStyle, VARIANTS } from "@/map-style";
 import { paletteSource } from "@/map-style/palette";
 
 /** WCAG relative luminance from an HSL triple. */
-function luminance([h, s, l]: [number, number, number]) {
+function luminance([h, s, l]: readonly [number, number, number]) {
   const S = s / 100;
   const L = l / 100;
   const c = (1 - Math.abs(2 * L - 1)) * S;
@@ -29,7 +29,10 @@ function luminance([h, s, l]: [number, number, number]) {
   return 0.2126 * lin(r1) + 0.7152 * lin(g1) + 0.0722 * lin(b1);
 }
 
-function contrast(a: [number, number, number], b: [number, number, number]) {
+function contrast(
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+) {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
@@ -63,7 +66,7 @@ describe("map style pipeline", () => {
   it("never emits pitch, terrain or extrusion layers", () => {
     for (const variant of VARIANTS) {
       const style = buildStyle({ variant, tileUrl: "https://t.example/{z}/{x}/{y}.pbf" });
-      expect(style.layers.some((layer) => layer.type === "fill-extrusion")).toBe(false);
+      expect(style.layers.some((layer) => String(layer.type) === "fill-extrusion")).toBe(false);
       expect("terrain" in style).toBe(false);
     }
   });
