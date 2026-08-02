@@ -139,7 +139,9 @@ export function VenueBrowser({
               the map does.
             </p>
           }
+          overlay={<HomeAreaLegend />}
         />
+
       ) : null}
 
 
