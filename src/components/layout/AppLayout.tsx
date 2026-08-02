@@ -11,7 +11,7 @@ const navItems = [
   { path: "/", label: "Home", icon: Home },
   { path: "/playdates", label: "Derpdates", icon: HeartHandshake },
   { path: "/inbox", label: "Inbox", icon: MessageCircle },
-  { path: "/my-derps", label: "My Derps", icon: Heart },
+  { path: "/my-derps", label: "My Derp Friends", icon: Heart },
   { path: "/profile", label: "Profile", icon: User },
 ];
 
