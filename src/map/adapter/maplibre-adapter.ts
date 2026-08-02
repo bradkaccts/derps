@@ -148,9 +148,6 @@ export async function createMapLibreAdapter(
   map.addSource(VENUE_SOURCE, {
     type: "geojson",
     data: { type: "FeatureCollection", features: [] },
-    cluster: true,
-    clusterMaxZoom: CLUSTER_MAX_ZOOM,
-    clusterRadius: 48,
     promoteId: "id",
   });
 
@@ -176,26 +173,12 @@ export async function createMapLibreAdapter(
     paint: { "line-color": palette.geofenceLine, "line-width": 2, "line-dasharray": [3, 2] },
   });
 
-  // MapLibre only tiles a source that at least one layer consumes, and
-  // `querySourceFeatures` reads those tiles. The markers are DOM, so these two
-  // layers exist purely to keep the source live — hence zero opacity.
-  map.addLayer({
-    id: "venue-cluster-anchor",
-    type: "circle",
-    source: VENUE_SOURCE,
-    filter: ["has", "point_count"],
-    paint: { "circle-radius": 1, "circle-opacity": 0 },
-  });
-  map.addLayer({
-    id: "venue-point-anchor",
-    type: "circle",
-    source: VENUE_SOURCE,
-    filter: ["!", ["has", "point_count"]],
-    paint: { "circle-radius": 1, "circle-opacity": 0 },
-  });
-
   /* ---------------------------------------------------------------- *
-   * Markers — clusters and pins, synced from the clustered source.
+   * Markers — clusters and pins, clustered in screen space.
+   *
+   * Screen-space grouping rather than the source's built-in supercluster:
+   * clustering has to agree with what the user can actually see, the pins are
+   * DOM anyway, and it keeps marker sync independent of tile parsing.
    * ---------------------------------------------------------------- */
 
   const makePin = (venue: MapVenueFeature) => {
@@ -236,38 +219,55 @@ export async function createMapLibreAdapter(
     return el;
   };
 
-  const syncMarkers = () => {
-    if (destroyed || !map.getSource(VENUE_SOURCE)) return;
-    const features = map.querySourceFeatures(VENUE_SOURCE, {}).slice(0, maxRenderedVenues);
-    const seen = new Set<string>();
-    console.log("[derps-map] sync", features.length, venues.length, map.getZoom());
+  const CLUSTER_PX = 56;
 
-    for (const feature of features) {
-      if (feature.geometry.type !== "Point") continue;
-      const coords = feature.geometry.coordinates as [number, number];
-      const props = feature.properties ?? {};
-      const isCluster = Boolean(props.cluster);
-      const key = isCluster ? `cluster-${props.cluster_id}` : `venue-${feature.id ?? props.id}`;
-      if (seen.has(key)) continue;
+  const syncMarkers = () => {
+    if (destroyed) return;
+
+    const zoom = map.getZoom();
+    const bounds = map.getBounds();
+    const visible = venues
+      .filter((venue) => bounds.contains([venue.lng, venue.lat]))
+      .slice(0, maxRenderedVenues);
+
+    type Group = { venues: MapVenueFeature[]; x: number; y: number };
+    const groups: Group[] = [];
+
+    for (const venue of visible) {
+      const point = map.project([venue.lng, venue.lat]);
+      const near =
+        zoom <= CLUSTER_MAX_ZOOM
+          ? groups.find((g) => Math.hypot(g.x - point.x, g.y - point.y) < CLUSTER_PX)
+          : undefined;
+      if (near) near.venues.push(venue);
+      else groups.push({ venues: [venue], x: point.x, y: point.y });
+    }
+
+    const seen = new Set<string>();
+
+    for (const group of groups) {
+      const isCluster = group.venues.length > 1;
+      const ids = group.venues.map((v) => v.id);
+      const coords: [number, number] = isCluster
+        ? [
+            ids.reduce((sum, _, i) => sum + group.venues[i].lng, 0) / ids.length,
+            ids.reduce((sum, _, i) => sum + group.venues[i].lat, 0) / ids.length,
+          ]
+        : [group.venues[0].lng, group.venues[0].lat];
+      const key = isCluster ? `cluster-${ids.join("|")}` : `venue-${ids[0]}`;
       seen.add(key);
 
-      if (markers.has(key)) {
-        markers.get(key)!.setLngLat(coords);
+      const existing = markers.get(key);
+      if (existing) {
+        existing.setLngLat(coords);
         continue;
       }
 
-      let el: HTMLElement;
-      if (isCluster) {
-        el = makeCluster(Number(props.point_count ?? 0), coords);
-      } else {
-        const venue = venues.find((v) => v.id === String(feature.id ?? props.id));
-        if (!venue) continue;
-        el = makePin(venue);
-        if (venue.id === selectedId) el.dataset.selected = "true";
-      }
-
-      const marker = new Marker({ element: el }).setLngLat(coords).addTo(map);
-      markers.set(key, marker);
+      const el = isCluster
+        ? makeCluster(group.venues.length, coords)
+        : makePin(group.venues[0]);
+      if (!isCluster && group.venues[0].id === selectedId) el.dataset.selected = "true";
+      markers.set(key, new Marker({ element: el }).setLngLat(coords).addTo(map));
     }
 
     for (const [key, marker] of markers) {
