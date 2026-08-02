@@ -51,16 +51,38 @@ export function buildStyle(options: BuildStyleOptions): StyleSpec {
     tileUrl,
     glyphs,
     sprite,
+    rasterTiles,
     center = DEFAULT_CENTER,
     zoom = DEFAULT_ZOOM,
-    attribution = "© OpenStreetMap contributors",
+    attribution = "© OpenStreetMap contributors, © CARTO",
   } = options;
 
   const palette = paletteFor(variant);
   const layers: LayerSpec[] = [...backgroundLayers(palette)];
   const sources: Record<string, unknown> = {};
 
+  // Without a vector endpoint, fall back to a keyless raster basemap so the
+  // canvas shows actual geography rather than a flat token-coloured field.
+  const raster =
+    rasterTiles === null ? null : rasterTiles ?? [RASTER_BASEMAPS[variant]];
+  if (!tileUrl && raster) {
+    sources[RASTER_SOURCE_ID] = {
+      type: "raster",
+      tiles: raster,
+      tileSize: 256,
+      maxzoom: 20,
+      attribution,
+    };
+    layers.push({
+      id: "basemap-raster",
+      type: "raster",
+      source: RASTER_SOURCE_ID,
+      paint: { "raster-opacity": 1, "raster-saturation": -0.15 },
+    } as LayerSpec);
+  }
+
   if (tileUrl) {
+
     sources[SOURCE_ID] = tileUrl.endsWith(".json")
       ? { type: "vector", url: tileUrl, attribution }
       : { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution };
