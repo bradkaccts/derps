@@ -39,7 +39,8 @@ const DEFAULT_MAX_RENDERED = 500;
 
 type Listeners = { [K in keyof MapAdapterEvents]: Set<MapAdapterEvents[K]> };
 
-function circlePolygon({ center, radiusMeters }: GeofenceCircle, steps = 64) {
+function circlePolygon(circle: GeofenceCircle, steps = 64) {
+  const { center, radiusMeters, label, description } = circle;
   const [lng, lat] = center;
   const latRadius = radiusMeters / 111_320;
   const lngRadius = radiusMeters / (111_320 * Math.cos((lat * Math.PI) / 180));
@@ -53,12 +54,13 @@ function circlePolygon({ center, radiusMeters }: GeofenceCircle, steps = 64) {
     features: [
       {
         type: "Feature" as const,
-        properties: {},
+        properties: { label: label ?? "", description: description ?? "" },
         geometry: { type: "Polygon" as const, coordinates: [ring] },
       },
     ],
   };
 }
+
 
 /** Cheap WebGL probe — the fallback list view renders when this is false. */
 export function isWebglSupported(): boolean {
