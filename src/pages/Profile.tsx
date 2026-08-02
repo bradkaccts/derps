@@ -456,7 +456,8 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Max Adoption Fee */}
+      {/* Max Adoption Fee — hidden while the app is Derpdates-first */}
+      {FEATURES.adoption && (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">💰 Max adoption fee</CardTitle>
@@ -481,6 +482,7 @@ const Profile = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Max Distance */}
       <Card>
