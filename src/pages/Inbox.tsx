@@ -184,7 +184,7 @@ const Inbox = () => {
         <div className="p-4 pb-2">
           <h1 className="text-2xl font-extrabold text-foreground">Inbox</h1>
         </div>
-        <TabBar />
+        {FEATURES.adoption && <TabBar />}
         {tab === "adoptions" ? (
           <ConversationList conversations={conversations} selectedId={selectedConvId} onSelect={handleSelectConv} />
         ) : (
