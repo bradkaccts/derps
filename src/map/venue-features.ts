@@ -26,7 +26,11 @@ export function venueResultsToFeatures(results: VenueResult[]): MapVenueFeature[
 export const HOME_AREA: GeofenceCircle = {
   center: [HOME_GEO.lng, HOME_GEO.lat],
   radiusMeters: 1200,
+  label: "Your home area",
+  description:
+    "A blurred ~1.2 km circle around your neighbourhood. Other Derp parents only ever see this area — never your exact address.",
 };
+
 
 export function boundsFor(features: MapVenueFeature[], home = HOME_AREA) {
   const lngs = [home.center[0], ...features.map((f) => f.lng)];
