@@ -16,8 +16,10 @@ import {
   GeoJSONSource,
   Map as MapLibreMap,
   Marker,
+  Popup,
   type LngLatLike,
 } from "maplibre-gl";
+
 import { buildStyle } from "@/map-style";
 import { paletteFor } from "@/map-style/palette";
 import { type ThemeName } from "@/design-tokens/tokens";
