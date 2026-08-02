@@ -34,7 +34,10 @@ export interface DerpsMapProps {
   label: string;
   /** Rendered while the renderer loads, and instead of it when unsupported. */
   fallback?: React.ReactNode;
+  /** Chrome drawn over the canvas once ready — legends, keys, controls. */
+  overlay?: React.ReactNode;
 }
+
 
 function prefersReducedMotion() {
   return typeof window !== "undefined"
