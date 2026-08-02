@@ -203,7 +203,7 @@ const Inbox = () => {
         <div className="p-4 pb-2 shrink-0">
           <h1 className="text-xl font-extrabold text-foreground">Inbox</h1>
         </div>
-        <TabBar />
+        {FEATURES.adoption && <TabBar />}
         <div className="flex-1 overflow-y-auto">
           {tab === "adoptions" ? (
             <ConversationList conversations={conversations} selectedId={selectedConvId} onSelect={handleSelectConv} />
