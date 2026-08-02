@@ -8,6 +8,7 @@ import { isWithinCheckinWindow } from "@/lib/playdates/geo";
 import { type Meetup } from "@/lib/playdates/types";
 import { currentUser } from "@/data/mock-users";
 import { toast } from "sonner";
+import { VenueConfirmationPrompt } from "./VenueConfirmationPrompt";
 
 const STATE_STYLES: Record<string, string> = {
   Proposed: "border-accent/50 bg-accent/5",
@@ -192,6 +193,15 @@ export function MeetupCard({
               You're checked in. We'll ask how it went once {partnerPetName} arrives or the window
               closes.
             </p>
+          )}
+
+          {/*
+            VC-201/VC-202 — presence-gated: a check-in only exists when the
+            on-device geofence check passed, so this is the one surface where
+            these questions can honestly be asked.
+          */}
+          {myCheckin && venue && (
+            <VenueConfirmationPrompt venue={venue} meetupId={meetup.id} />
           )}
         </div>
       )}

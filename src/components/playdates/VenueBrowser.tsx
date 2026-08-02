@@ -16,11 +16,16 @@ import {
   VENUE_TYPE_LABELS,
   filterVenues,
   rankVenuesForPair,
+  recommendVenue,
   selectableVenues,
   type VenueFilters,
   type VenueResult,
 } from "@/lib/playdates/venues";
+import { useVenueConfidence } from "@/context/playdates/VenueConfidenceContext";
+import { VenueAttributeProvenance } from "./VenueAttributeProvenance";
+import { isFencedConfident } from "@/lib/playdates/venue-confidence";
 import {
+  type VenueAttributeAggregate,
   type PetTraitVector,
   type Venue,
   type VenueAmenity,
@@ -54,13 +59,32 @@ export function VenueBrowser({
 }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
+  const { attributeStates } = useVenueConfidence();
 
   const results = useMemo(() => {
     // MP-404 — only verified catalog venues are ever selectable.
     const catalog = onSelect ? selectableVenues(mockVenues) : mockVenues;
     const filtered = filterVenues(catalog, HOME_GEO, filters);
-    return pairTraits ? rankVenuesForPair(filtered, pairTraits[0], pairTraits[1]) : filtered;
-  }, [filters, pairTraits, onSelect]);
+    const ranked = pairTraits
+      ? rankVenuesForPair(filtered, pairTraits[0], pairTraits[1])
+      : filtered;
+
+    // VC-313 — re-run the pair recommendation with visitor confirmation in
+    // hand, so a disputed fence downgrades the advice rather than the static
+    // amenity flag carrying the day.
+    if (!pairTraits) return ranked;
+    return ranked.map((result) => {
+      const aggregates = attributeStates(result.venue.id, result.venue.venueType);
+      const fenced = aggregates.find((a) => a.attributeKey === "fenced");
+      return {
+        ...result,
+        recommendation: recommendVenue(result.venue, pairTraits[0], pairTraits[1], {
+          confirmedFenced: isFencedConfident(aggregates),
+          disputed: fenced?.state === "disputed",
+        }),
+      };
+    });
+  }, [filters, pairTraits, onSelect, attributeStates]);
 
   const features = useMemo(() => venueResultsToFeatures(results), [results]);
 
@@ -154,6 +178,7 @@ export function VenueBrowser({
               venue={venue}
               distanceBand={distanceBand}
               recommendation={recommendation}
+              aggregates={attributeStates(venue.id, venue.venueType)}
               onSelect={onSelect}
               selected={selectedVenueId === venue.id}
             />
@@ -184,9 +209,16 @@ function VenueRow({
   venue,
   distanceBand,
   recommendation,
+  aggregates,
   onSelect,
   selected,
-}: VenueResult & { onSelect?: (venue: Venue) => void; selected?: boolean }) {
+}: VenueResult & {
+  aggregates: VenueAttributeAggregate[];
+  onSelect?: (venue: Venue) => void;
+  selected?: boolean;
+}) {
+  const stateFor = (amenity: VenueAmenity) =>
+    aggregates.find((a) => a.attributeKey === amenity);
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -206,13 +238,34 @@ function VenueRow({
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1">
-        {venue.amenities.map((amenity) => (
-          <Badge key={amenity} variant="secondary" className="gap-1 text-xs font-medium">
-            <span aria-hidden>{AMENITY_EMOJI[amenity]}</span>
-            {AMENITY_LABELS[amenity]}
-          </Badge>
-        ))}
+        {venue.amenities.map((amenity) => {
+          // VC-322 — the amenity chip carries confirmation state as plain
+          // language, not as a badge or a score.
+          const aggregate = stateFor(amenity);
+          const disputed = aggregate?.state === "disputed";
+          const confirmed = aggregate?.state === "confirmed" && aggregate.value === "yes";
+          return (
+            <Badge
+              key={amenity}
+              variant="secondary"
+              className={cn(
+                "gap-1 text-xs font-medium",
+                disputed && "bg-destructive/10 text-destructive",
+              )}
+            >
+              <span aria-hidden>{AMENITY_EMOJI[amenity]}</span>
+              {AMENITY_LABELS[amenity]}
+              {confirmed && (
+                <span className="font-normal opacity-80">
+                  · {aggregate.nDistinct} confirmed
+                </span>
+              )}
+              {disputed && <span className="font-normal">· mixed reports</span>}
+            </Badge>
+          );
+        })}
       </div>
+
 
       {/* MP-412 — posted leash rules travel with the venue, always. */}
       <p className="mt-2 text-xs text-muted-foreground">
@@ -234,22 +287,46 @@ function VenueRow({
     </>
   );
 
+  /*
+   * Provenance sits outside the selection button on purpose: a disclosure
+   * control nested inside a button is unreachable by keyboard, and reading the
+   * evidence must never be the same gesture as choosing the venue.
+   */
+  const provenance = aggregates.length > 0 && (
+    <details className="mt-2">
+      <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground">
+        What visitors say about this place
+      </summary>
+      <VenueAttributeProvenance aggregates={aggregates} className="mt-1.5" />
+    </details>
+  );
+
   if (!onSelect) {
-    return <div className="rounded-xl border border-border bg-card p-3">{body}</div>;
+    return (
+      <div className="rounded-xl border border-border bg-card p-3">
+        {body}
+        {provenance}
+      </div>
+    );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(venue)}
-      disabled={recommendation ? !recommendation.suitable : false}
+    <div
       className={cn(
-        "btn-bouncy w-full rounded-xl border-2 bg-card p-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+        "rounded-xl border-2 bg-card transition-all",
         selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
       )}
     >
-      {body}
-    </button>
+      <button
+        type="button"
+        onClick={() => onSelect(venue)}
+        disabled={recommendation ? !recommendation.suitable : false}
+        className="btn-bouncy w-full rounded-xl p-3 text-left disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {body}
+      </button>
+      <div className="px-3 pb-3">{provenance}</div>
+    </div>
   );
 }
 
