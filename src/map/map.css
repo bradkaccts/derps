@@ -1,0 +1,73 @@
+/**
+ * Marker and canvas chrome for the Derps map (spec §7.3, §9).
+ *
+ * Colours arrive as CSS custom properties written by DerpsMap from the same
+ * palette that generates the style JSON, so pins can never drift from the
+ * basemap they sit on.
+ */
+
+.derps-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.derps-map-canvas .maplibregl-canvas:focus-visible {
+  outline: 2px solid var(--derps-map-pin-selected);
+  outline-offset: -2px;
+}
+
+/* 44px minimum touch target (MAP-604). */
+.derps-map-pin,
+.derps-map-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--derps-map-pin);
+  background: var(--derps-map-surface);
+  box-shadow: 0 2px 6px hsl(20 30% 20% / 0.18);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.derps-map-pin:hover,
+.derps-map-cluster:hover {
+  transform: scale(1.08);
+}
+
+.derps-map-pin:focus-visible,
+.derps-map-cluster:focus-visible {
+  outline: 3px solid var(--derps-map-pin-selected);
+  outline-offset: 2px;
+}
+
+.derps-map-pin[data-selected="true"] {
+  border-color: var(--derps-map-pin-selected);
+  border-width: 3px;
+  transform: scale(1.12);
+}
+
+.derps-map-pin[data-disabled="true"] {
+  border-color: var(--derps-map-pin-disabled);
+  opacity: 0.6;
+}
+
+.derps-map-cluster {
+  border-color: var(--derps-map-cluster);
+  background: var(--derps-map-cluster);
+  color: var(--derps-map-cluster-text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derps-map-pin,
+  .derps-map-cluster {
+    transition: none;
+  }
+}
