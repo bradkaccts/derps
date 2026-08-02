@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/config/features";
 import { currentUser } from "@/data/mock-users";
 import { mockVenues } from "@/data/mock-venues";
 import { ownerName } from "@/data/mock-playdate-pets";
