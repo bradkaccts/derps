@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mockVenues } from "@/data/mock-venues";
+import { DerpsMap } from "@/map/DerpsMap";
+import { HOME_AREA, venueResultsToFeatures } from "@/map/venue-features";
 import { HOME_GEO } from "@/hooks/use-playdate-feed";
 import {
   AMENITY_EMOJI,
@@ -57,6 +59,8 @@ export function VenueBrowser({
     const filtered = filterVenues(catalog, HOME_GEO, filters);
     return pairTraits ? rankVenuesForPair(filtered, pairTraits[0], pairTraits[1]) : filtered;
   }, [filters, pairTraits, onSelect]);
+
+  const features = useMemo(() => venueResultsToFeatures(results), [results]);
 
   const toggle = <T,>(list: T[], value: T): T[] =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -117,8 +121,27 @@ export function VenueBrowser({
       </p>
 
       {view === "map" ? (
-        <SchematicMap results={results} onSelect={onSelect} selectedVenueId={selectedVenueId} />
+        <DerpsMap
+          className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted"
+          label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
+          venues={features}
+          camera={{ center: HOME_AREA.center, zoom: 11 }}
+          geofence={HOME_AREA}
+          selectedVenueId={selectedVenueId ?? null}
+          onSelectVenue={(id) => {
+            if (!id || !onSelect) return;
+            const hit = results.find((r) => r.venue.id === id);
+            if (hit && (hit.recommendation?.suitable ?? true)) onSelect(hit.venue);
+          }}
+          fallback={
+            <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+              Your browser can't show the map, so here's the full list instead — it has everything
+              the map does.
+            </p>
+          }
+        />
       ) : null}
+
 
       <ul className="space-y-3">
         {results.map(({ venue, distanceBand, recommendation }) => (
@@ -223,90 +246,6 @@ function VenueRow({
     >
       {body}
     </button>
-  );
-}
-
-/**
- * A relative-position plot, not a basemap. Home sits at the centre; venues are
- * placed by their offset from it. Every pin is also a row in the list above,
- * which is the accessible equivalent view.
- */
-function SchematicMap({
-  results,
-  onSelect,
-  selectedVenueId,
-}: {
-  results: VenueResult[];
-  onSelect?: (venue: Venue) => void;
-  selectedVenueId?: string;
-}) {
-  const points = useMemo(() => {
-    const lats = results.map((r) => r.venue.geo.lat);
-    const lngs = results.map((r) => r.venue.geo.lng);
-    const minLat = Math.min(HOME_GEO.lat, ...lats);
-    const maxLat = Math.max(HOME_GEO.lat, ...lats);
-    const minLng = Math.min(HOME_GEO.lng, ...lngs);
-    const maxLng = Math.max(HOME_GEO.lng, ...lngs);
-    const spanLat = Math.max(0.02, maxLat - minLat);
-    const spanLng = Math.max(0.02, maxLng - minLng);
-
-    const project = (lat: number, lng: number) => ({
-      x: 8 + ((lng - minLng) / spanLng) * 84,
-      y: 92 - ((lat - minLat) / spanLat) * 84,
-    });
-
-    return {
-      home: project(HOME_GEO.lat, HOME_GEO.lng),
-      venues: results.map((r) => ({ ...r, ...project(r.venue.geo.lat, r.venue.geo.lng) })),
-    };
-  }, [results]);
-
-  return (
-    <div
-      className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary/50 via-muted to-primary/10"
-      role="img"
-      aria-label={`Schematic map of ${results.length} venues around your area. The same venues are listed below.`}
-    >
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
-        {[25, 50, 75].map((v) => (
-          <g key={v} stroke="hsl(var(--border))" strokeWidth={0.3}>
-            <line x1={v} y1={0} x2={v} y2={100} />
-            <line x1={0} y1={v} x2={100} y2={v} />
-          </g>
-        ))}
-        <circle cx={points.home.x} cy={points.home.y} r={2.2} fill="hsl(var(--primary))" />
-        <circle
-          cx={points.home.x}
-          cy={points.home.y}
-          r={5}
-          fill="none"
-          stroke="hsl(var(--primary))"
-          strokeWidth={0.5}
-          strokeDasharray="2 2"
-        />
-      </svg>
-
-      {points.venues.map((point) => (
-        <button
-          key={point.venue.id}
-          type="button"
-          onClick={() => onSelect?.(point.venue)}
-          style={{ left: `${point.x}%`, top: `${point.y}%` }}
-          className={cn(
-            "absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-card text-lg shadow transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-            selectedVenueId === point.venue.id ? "border-primary" : "border-border",
-            point.recommendation && !point.recommendation.suitable && "opacity-50",
-          )}
-          aria-label={`${point.venue.name}, ${point.distanceBand} away`}
-        >
-          <span aria-hidden>{VENUE_TYPE_EMOJI[point.venue.venueType]}</span>
-        </button>
-      ))}
-
-      <span className="absolute bottom-2 left-3 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-        🏠 Your area (approximate)
-      </span>
-    </div>
   );
 }
 

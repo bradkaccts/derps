@@ -1,0 +1,91 @@
+/**
+ * Style variants (spec §4.5) — day, night, high-contrast.
+ *
+ * The basemap layers are only emitted when a vector tile endpoint is
+ * configured. Until one is, the style is a valid, token-coloured background
+ * over which Derps renders its own venue data; adding tiles later is a URL,
+ * not a code change.
+ */
+import { type ThemeName } from "@/design-tokens/tokens";
+import { paletteFor } from "./palette";
+import { SOURCE_ID, type LayerSpec, type StyleSpec } from "./schema";
+import { backgroundLayers } from "./layers/background";
+import { landcoverLayers } from "./layers/landcover";
+import { waterLayers } from "./layers/water";
+import { transportationLayers } from "./layers/transportation";
+import { buildingLayers } from "./layers/buildings";
+import { labelLayers } from "./layers/labels";
+
+export interface BuildStyleOptions {
+  variant: ThemeName;
+  /** Vector tile JSON or `{z}/{x}/{y}` template. Omit for the no-basemap build. */
+  tileUrl?: string;
+  /** Same-origin glyph range template. Text layers are dropped without it. */
+  glyphs?: string;
+  /** Same-origin sprite base. */
+  sprite?: string;
+  center?: [number, number];
+  zoom?: number;
+  attribution?: string;
+}
+
+/** Launch metro (FRD §13.8) — Ventura/LA. */
+export const DEFAULT_CENTER: [number, number] = [-119.229, 34.2746];
+export const DEFAULT_ZOOM = 11.5;
+
+export function buildStyle(options: BuildStyleOptions): StyleSpec {
+  const {
+    variant,
+    tileUrl,
+    glyphs,
+    sprite,
+    center = DEFAULT_CENTER,
+    zoom = DEFAULT_ZOOM,
+    attribution = "© OpenStreetMap contributors",
+  } = options;
+
+  const palette = paletteFor(variant);
+  const layers: LayerSpec[] = [...backgroundLayers(palette)];
+  const sources: Record<string, unknown> = {};
+
+  if (tileUrl) {
+    sources[SOURCE_ID] = tileUrl.endsWith(".json")
+      ? { type: "vector", url: tileUrl, attribution }
+      : { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution };
+
+    layers.push(
+      ...landcoverLayers(palette),
+      ...waterLayers(palette),
+      ...transportationLayers(palette),
+      ...buildingLayers(palette),
+    );
+
+    // Symbol layers need glyph ranges; emitting them without would fail at load.
+    const basemapLabels = labelLayers(palette).filter(
+      (layer) => layer.type !== "symbol" || Boolean(glyphs),
+    );
+    layers.push(...basemapLabels);
+  }
+
+  const style: StyleSpec = {
+    version: 8,
+    name: `Derps ${variant}`,
+    metadata: {
+      "derps:variant": variant,
+      "derps:generated": true,
+      "derps:note": "Generated from @/design-tokens. Do not hand-edit.",
+      "derps:basemap": Boolean(tileUrl),
+    },
+    sources,
+    center,
+    zoom,
+    layers,
+  };
+
+  if (glyphs) style.glyphs = glyphs;
+  if (sprite) style.sprite = sprite;
+
+  return style;
+}
+
+export const VARIANTS: ThemeName[] = ["day", "night", "contrast"];
