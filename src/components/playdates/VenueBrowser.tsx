@@ -370,28 +370,81 @@ function FilterChip({
 }
 
 /** Always-visible key for the blurred circle, with the full explanation on hover/tap. */
-function HomeAreaLegend() {
+/**
+ * MAP-618 — an always-visible key for every symbol the map draws. The
+ * home-area privacy note stays on screen rather than hiding in a tooltip,
+ * since that is the part people most need to read.
+ */
+function MapLegend({
+  selectable,
+  hasClusters,
+}: {
+  selectable: boolean;
+  hasClusters: boolean;
+}) {
+  const [open, setOpen] = useState(true);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur"
+      >
+        <Info className="h-3.5 w-3.5 text-muted-foreground" />
+        Legend
+      </button>
+    );
+  }
+
+  const rows: { kind: string; label: string }[] = [
+    { kind: "home", label: HOME_AREA.label ?? "Your home area" },
+    { kind: "pin", label: "Meet-up spot" },
+    ...(selectable
+      ? [
+          { kind: "selected", label: "Selected" },
+          { kind: "disabled", label: "Not a fit for this pair" },
+        ]
+      : []),
+    ...(hasClusters ? [{ kind: "cluster", label: "Several spots — zoom in" }] : []),
+  ];
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <div className="absolute bottom-3 left-3 max-w-[62%] rounded-2xl border border-border bg-card/95 px-3 py-2 shadow-md backdrop-blur">
+      <div className="flex items-start justify-between gap-2">
+        <dl className="space-y-1">
+          {rows.map((row) => (
+            <div key={row.kind} className="flex items-center gap-2">
+              <dt className="flex items-center">
+                <span
+                  aria-hidden="true"
+                  data-kind={row.kind}
+                  className="derps-map-legend-swatch"
+                />
+                <span className="sr-only">{row.label} symbol</span>
+              </dt>
+              <dd className="text-[11px] font-semibold leading-tight text-foreground">
+                {row.label}
+              </dd>
+            </div>
+          ))}
+        </dl>
         <button
           type="button"
-          className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur"
+          onClick={() => setOpen(false)}
+          aria-label="Hide map legend"
+          className="rounded-full p-0.5 text-muted-foreground hover:text-foreground"
         >
-          <span
-            aria-hidden="true"
-            className="h-3 w-3 rounded-full border-2 border-dashed border-primary bg-primary/20"
-          />
-          Your home area
-          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+          <X className="h-3.5 w-3.5" />
         </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" align="start" className="max-w-[240px] text-xs">
+      </div>
+      <p className="mt-1.5 max-w-[220px] text-[10px] leading-snug text-muted-foreground">
         {HOME_AREA.description}
-      </TooltipContent>
-    </Tooltip>
+      </p>
+    </div>
   );
 }
+
 
 function ViewToggle({
 
