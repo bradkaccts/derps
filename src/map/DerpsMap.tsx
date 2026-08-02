@@ -153,11 +153,13 @@ export function DerpsMap({
         role="application"
         aria-label={label}
       />
+      {status === "ready" && overlay}
       {status === "loading" && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/60 text-sm font-semibold text-muted-foreground">
           Loading map…
         </div>
       )}
+
     </div>
   );
 }
