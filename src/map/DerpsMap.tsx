@@ -56,6 +56,8 @@ export function DerpsMap({
   className,
   label,
   fallback = null,
+  overlay = null,
+
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<MapAdapter | null>(null);
