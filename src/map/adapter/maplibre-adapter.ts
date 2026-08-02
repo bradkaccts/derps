@@ -110,7 +110,6 @@ export async function createMapLibreAdapter(
     transformRequest: (url) => ({ url }),
   });
   map.touchZoomRotate.disableRotation();
-  (window as unknown as Record<string, unknown>).__derpsMap = map;
   map.easeTo({ padding, duration: 0 });
 
   let venues: MapVenueFeature[] = [];
