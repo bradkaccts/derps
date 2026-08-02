@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:map-style": "tsx src/map-style/build.ts"
+    "build:map-style": "bun src/map-style/build.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
