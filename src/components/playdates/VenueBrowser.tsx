@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check } from "lucide-react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+
 import { cn } from "@/lib/utils";
 import { mockVenues } from "@/data/mock-venues";
 import { DerpsMap } from "@/map/DerpsMap";
@@ -139,7 +141,9 @@ export function VenueBrowser({
               the map does.
             </p>
           }
+          overlay={<HomeAreaLegend />}
         />
+
       ) : null}
 
 
@@ -288,7 +292,32 @@ function FilterChip({
   );
 }
 
+/** Always-visible key for the blurred circle, with the full explanation on hover/tap. */
+function HomeAreaLegend() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur"
+        >
+          <span
+            aria-hidden="true"
+            className="h-3 w-3 rounded-full border-2 border-dashed border-primary bg-primary/20"
+          />
+          Your home area
+          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start" className="max-w-[240px] text-xs">
+        {HOME_AREA.description}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function ViewToggle({
+
   active,
   onClick,
   icon: Icon,

@@ -34,7 +34,10 @@ export interface DerpsMapProps {
   label: string;
   /** Rendered while the renderer loads, and instead of it when unsupported. */
   fallback?: React.ReactNode;
+  /** Chrome drawn over the canvas once ready — legends, keys, controls. */
+  overlay?: React.ReactNode;
 }
+
 
 function prefersReducedMotion() {
   return typeof window !== "undefined"
@@ -53,6 +56,8 @@ export function DerpsMap({
   className,
   label,
   fallback = null,
+  overlay = null,
+
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<MapAdapter | null>(null);
@@ -148,11 +153,13 @@ export function DerpsMap({
         role="application"
         aria-label={label}
       />
+      {status === "ready" && overlay}
       {status === "loading" && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/60 text-sm font-semibold text-muted-foreground">
           Loading map…
         </div>
       )}
+
     </div>
   );
 }

@@ -16,8 +16,10 @@ import {
   GeoJSONSource,
   Map as MapLibreMap,
   Marker,
+  Popup,
   type LngLatLike,
 } from "maplibre-gl";
+
 import { buildStyle } from "@/map-style";
 import { paletteFor } from "@/map-style/palette";
 import { type ThemeName } from "@/design-tokens/tokens";
@@ -39,7 +41,8 @@ const DEFAULT_MAX_RENDERED = 500;
 
 type Listeners = { [K in keyof MapAdapterEvents]: Set<MapAdapterEvents[K]> };
 
-function circlePolygon({ center, radiusMeters }: GeofenceCircle, steps = 64) {
+function circlePolygon(circle: GeofenceCircle, steps = 64) {
+  const { center, radiusMeters, label, description } = circle;
   const [lng, lat] = center;
   const latRadius = radiusMeters / 111_320;
   const lngRadius = radiusMeters / (111_320 * Math.cos((lat * Math.PI) / 180));
@@ -53,12 +56,13 @@ function circlePolygon({ center, radiusMeters }: GeofenceCircle, steps = 64) {
     features: [
       {
         type: "Feature" as const,
-        properties: {},
+        properties: { label: label ?? "", description: description ?? "" },
         geometry: { type: "Polygon" as const, coordinates: [ring] },
       },
     ],
   };
 }
+
 
 /** Cheap WebGL probe — the fallback list view renders when this is false. */
 export function isWebglSupported(): boolean {
@@ -155,8 +159,10 @@ export async function createMapLibreAdapter(
     const palette = paletteFor(theme);
     map.setPaintProperty("venue-geofence-fill", "fill-color", palette.geofenceFill);
     map.setPaintProperty("venue-geofence-line", "line-color", palette.geofenceLine);
+    map.setPaintProperty("venue-geofence-glow", "line-color", palette.geofenceLine);
     container.dataset.derpsMapVariant = theme;
   };
+
 
   const palette = paletteFor(variant);
 
@@ -166,12 +172,78 @@ export async function createMapLibreAdapter(
     source: GEOFENCE_SOURCE,
     paint: { "fill-color": palette.geofenceFill },
   });
+  // Soft outer halo so the home area reads as a deliberate, blurred zone on
+  // top of the basemap rather than a stray shape (MAP-612).
+  map.addLayer({
+    id: "venue-geofence-glow",
+    type: "line",
+    source: GEOFENCE_SOURCE,
+    paint: {
+      "line-color": palette.geofenceLine,
+      "line-width": 12,
+      "line-blur": 10,
+      "line-opacity": 0.45,
+    },
+  });
   map.addLayer({
     id: "venue-geofence-line",
     type: "line",
     source: GEOFENCE_SOURCE,
-    paint: { "line-color": palette.geofenceLine, "line-width": 2, "line-dasharray": [3, 2] },
+    paint: { "line-color": palette.geofenceLine, "line-width": 3, "line-dasharray": [3, 2] },
   });
+
+  /* ---------------------------------------------------------------- *
+   * Geofence tooltip — hover (pointer) and tap (touch) both explain what
+   * the blurred circle is, since the shape alone can't say it.
+   * ---------------------------------------------------------------- */
+  const geofencePopup = new Popup({
+    closeButton: false,
+    closeOnClick: false,
+    className: "derps-map-popup",
+    maxWidth: "240px",
+  });
+
+  const showGeofencePopup = (lngLat: LngLatLike, props: Record<string, unknown>) => {
+    const label = String(props.label || "Your home area");
+    const description = String(
+      props.description || "A blurred circle around your neighbourhood — never your exact address.",
+    );
+    geofencePopup
+      .setLngLat(lngLat)
+      .setHTML(
+        `<strong class="derps-map-popup-title"></strong><span class="derps-map-popup-body"></span>`,
+      )
+      .addTo(map);
+    const el = geofencePopup.getElement();
+    const title = el?.querySelector(".derps-map-popup-title");
+    const body = el?.querySelector(".derps-map-popup-body");
+    if (title) title.textContent = label;
+    if (body) body.textContent = description;
+  };
+
+  const highlightGeofence = (on: boolean) => {
+    if (!map.getLayer("venue-geofence-line")) return;
+    map.setPaintProperty("venue-geofence-line", "line-width", on ? 5 : 3);
+    map.setPaintProperty("venue-geofence-glow", "line-opacity", on ? 0.8 : 0.45);
+  };
+
+  map.on("mousemove", "venue-geofence-fill", (event) => {
+    map.getCanvas().style.cursor = "help";
+    highlightGeofence(true);
+    showGeofencePopup(event.lngLat, event.features?.[0]?.properties ?? {});
+  });
+
+  map.on("mouseleave", "venue-geofence-fill", () => {
+    map.getCanvas().style.cursor = "";
+    highlightGeofence(false);
+    geofencePopup.remove();
+  });
+
+  map.on("click", "venue-geofence-fill", (event) => {
+    highlightGeofence(true);
+    showGeofencePopup(event.lngLat, event.features?.[0]?.properties ?? {});
+  });
+
 
   /* ---------------------------------------------------------------- *
    * Markers — clusters and pins, clustered in screen space.

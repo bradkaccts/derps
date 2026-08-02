@@ -18,4 +18,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // MapLibre spawns its worker from a URL relative to its own module. Pre-bundling
+  // breaks that resolution in dev, which silently kills every GeoJSON source.
+  optimizeDeps: {
+    exclude: ["maplibre-gl"],
+  },
 }));
+
