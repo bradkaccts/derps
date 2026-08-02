@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check, Info } from "lucide-react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,7 @@ export function VenueBrowser({
   className?: string;
 }) {
   const [view, setView] = useState<"list" | "map">("list");
+  const [hasClusters, setHasClusters] = useState(false);
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
   const { attributeStates } = useVenueConfidence();
 
@@ -165,7 +166,8 @@ export function VenueBrowser({
               the map does.
             </p>
           }
-          overlay={<HomeAreaLegend />}
+          onClustersChanged={setHasClusters}
+          overlay={<MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />}
         />
 
       ) : null}
