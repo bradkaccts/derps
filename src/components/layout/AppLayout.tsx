@@ -1,14 +1,14 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake, MapPin, LifeBuoy } from "lucide-react";
+import { MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake, MapPin, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
 import { useMatches } from "@/context/playdates/PlaydatesProvider";
+import { FEATURES } from "@/config/features";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { path: "/", label: "Home", icon: Home },
   { path: "/playdates", label: "Derpdates", icon: HeartHandshake },
   { path: "/inbox", label: "Inbox", icon: MessageCircle },
   { path: "/my-derps", label: "My Derp Friends", icon: Heart },
@@ -27,6 +27,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return 0;
   };
 
+  const isNavActive = (path: string) =>
+    path === "/playdates"
+      ? location.pathname === "/" || location.pathname.startsWith("/playdates")
+      : location.pathname === path;
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Desktop Sidebar */}
@@ -40,10 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => {
-              const isActive =
-                item.path === "/playdates"
-                  ? location.pathname.startsWith("/playdates")
-                  : location.pathname === item.path;
+              const isActive = isNavActive(item.path);
               const badge = badgeFor(item.path);
               return (
                 <Link
@@ -67,20 +69,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
               );
             })}
             </nav>
-            <div className="mt-4 space-y-2">
-              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
-                <Link to="/my-applications">
-                  <ClipboardList className="h-4 w-4" />
-                  My Applications
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
-                <Link to="/applications-inbox">
-                  <Inbox className="h-4 w-4" />
-                  Applicant Inbox
-                </Link>
-              </Button>
-            </div>
+
+            {FEATURES.adoption && (
+              <div className="mt-4 space-y-2">
+                <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                  <Link to="/my-applications">
+                    <ClipboardList className="h-4 w-4" />
+                    My Applications
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                  <Link to="/applications-inbox">
+                    <Inbox className="h-4 w-4" />
+                    Applicant Inbox
+                  </Link>
+                </Button>
+              </div>
+            )}
 
             {/* Derpdates sub-surfaces */}
             <div className="mt-4 space-y-2">
@@ -98,14 +103,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Button>
             </div>
 
-            <div className="mt-auto pt-4">
-              <Button asChild className="w-full gap-2 font-bold">
-                <Link to="/create-listing">
-                  <PlusCircle className="h-4 w-4" />
-                  Rehome a Derp
-                </Link>
-              </Button>
-            </div>
+            {FEATURES.adoption && (
+              <div className="mt-auto pt-4">
+                <Button asChild className="w-full gap-2 font-bold">
+                  <Link to="/create-listing">
+                    <PlusCircle className="h-4 w-4" />
+                    Rehome a Derp
+                  </Link>
+                </Button>
+              </div>
+            )}
           </aside>
         )}
 
@@ -116,18 +123,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {isMobile && (
         <>
           {/* Floating Rehome Button */}
-          <Link
-            to="/create-listing"
-            className="fixed bottom-[72px] right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
-          >
-            <PlusCircle className="h-6 w-6" />
-          </Link>
+          {FEATURES.adoption && (
+            <Link
+              to="/create-listing"
+              className="fixed bottom-[72px] right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
+            >
+              <PlusCircle className="h-6 w-6" />
+            </Link>
+          )}
           <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 safe-bottom">
             {navItems.map((item) => {
-              const isActive =
-                item.path === "/playdates"
-                  ? location.pathname.startsWith("/playdates")
-                  : location.pathname === item.path;
+              const isActive = isNavActive(item.path);
               const badge = badgeFor(item.path);
               return (
                 <Link

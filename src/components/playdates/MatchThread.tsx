@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/config/features";
 import { currentUser } from "@/data/mock-users";
 import { mockVenues } from "@/data/mock-venues";
 import { ownerName } from "@/data/mock-playdate-pets";
@@ -198,7 +199,7 @@ export function MatchThread(props: MatchThreadProps) {
               <div className="space-y-1">
                 <p className="text-sm font-bold text-foreground">{flag.title}</p>
                 <p className="text-xs text-muted-foreground">{flag.body}</p>
-                {flag.kind === "transfer_intent" && (
+                {flag.kind === "transfer_intent" && FEATURES.adoption && (
                   <Link
                     to="/create-listing"
                     className="inline-block text-xs font-bold text-primary hover:underline"

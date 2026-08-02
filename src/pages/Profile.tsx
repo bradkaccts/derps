@@ -14,6 +14,7 @@ import { useMyPets, type MyPet } from "@/context/MyPetsContext";
 import { type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
 import { vibeConfig, allVibes } from "@/lib/vibes";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/config/features";
 import { toast } from "sonner";
 
 const speciesOptions: { value: Species; label: string; emoji: string }[] = [
@@ -456,7 +457,8 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Max Adoption Fee */}
+      {/* Max Adoption Fee — hidden while the app is Derpdates-first */}
+      {FEATURES.adoption && (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">💰 Max adoption fee</CardTitle>
@@ -481,6 +483,7 @@ const Profile = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Max Distance */}
       <Card>

@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/config/features";
 
 type InboxTab = "adoptions" | "playdates";
 
@@ -184,7 +185,7 @@ const Inbox = () => {
         <div className="p-4 pb-2">
           <h1 className="text-2xl font-extrabold text-foreground">Inbox</h1>
         </div>
-        <TabBar />
+        {FEATURES.adoption && <TabBar />}
         {tab === "adoptions" ? (
           <ConversationList conversations={conversations} selectedId={selectedConvId} onSelect={handleSelectConv} />
         ) : (
@@ -202,7 +203,7 @@ const Inbox = () => {
         <div className="p-4 pb-2 shrink-0">
           <h1 className="text-xl font-extrabold text-foreground">Inbox</h1>
         </div>
-        <TabBar />
+        {FEATURES.adoption && <TabBar />}
         <div className="flex-1 overflow-y-auto">
           {tab === "adoptions" ? (
             <ConversationList conversations={conversations} selectedId={selectedConvId} onSelect={handleSelectConv} />

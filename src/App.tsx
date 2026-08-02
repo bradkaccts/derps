@@ -11,6 +11,7 @@ import { ApplicationProvider } from "@/context/ApplicationContext";
 import { MyPetsProvider } from "@/context/MyPetsContext";
 import { PlaydateProvider } from "@/context/PlaydateContext";
 import { PlaydatesProvider } from "@/context/playdates/PlaydatesProvider";
+import { FEATURES } from "@/config/features";
 import Index from "./pages/Index";
 import PlaydatesFeed from "./pages/PlaydatesFeed";
 import PlaydateQuiz from "./pages/PlaydateQuiz";
@@ -43,14 +44,23 @@ const App = () => (
                     <PlaydatesProvider>
                       <AppLayout>
                         <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/pet/:id" element={<PetProfile />} />
+                          {/* Release 1 is Derpdates-first: the feed is home. */}
+                          <Route path="/" element={<PlaydatesFeed />} />
                           <Route path="/inbox" element={<Inbox />} />
                           <Route path="/my-derps" element={<MyDerps />} />
                           <Route path="/profile" element={<Profile />} />
-                          <Route path="/create-listing" element={<CreateListing />} />
-                          <Route path="/my-applications" element={<MyApplications />} />
-                          <Route path="/applications-inbox" element={<RehomerApplications />} />
+
+                          {/* Adoption surfaces — hidden for release 1 */}
+                          {FEATURES.adoption && (
+                            <>
+                              <Route path="/browse" element={<Index />} />
+                              <Route path="/pet/:id" element={<PetProfile />} />
+                              <Route path="/create-listing" element={<CreateListing />} />
+                              <Route path="/my-applications" element={<MyApplications />} />
+                              <Route path="/applications-inbox" element={<RehomerApplications />} />
+                            </>
+                          )}
+
                           {/* Derps Playdates — pet-to-pet social matching */}
                           <Route path="/playdates" element={<PlaydatesFeed />} />
                           <Route path="/playdates/quiz/:petId" element={<PlaydateQuiz />} />
