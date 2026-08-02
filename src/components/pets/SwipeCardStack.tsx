@@ -103,17 +103,38 @@ interface SwipeCardProps {
 }
 
 function SwipeCard({ pet, isTop, stackIndex, onSwipe, exitDirection }: SwipeCardProps) {
+  const navigate = useNavigate();
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const heartOpacity = useTransform(x, [0, 80], [0, 1]);
   const skipOpacity = useTransform(x, [-80, 0], [1, 0]);
+  const draggedRef = useRef(false);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragStart = () => {
+    draggedRef.current = false;
+  };
+
+  const handleDrag = (_: unknown, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > 8 || Math.abs(info.offset.y) > 8) {
+      draggedRef.current = true;
+    }
+  };
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = 100;
-    if (info.offset.x > threshold) {
+    const velocityThreshold = 500;
+    // A quick flick counts even if the finger didn't travel far
+    const goRight =
+      info.offset.x > threshold ||
+      (info.velocity.x > velocityThreshold && info.offset.x > 20);
+    const goLeft =
+      info.offset.x < -threshold ||
+      (info.velocity.x < -velocityThreshold && info.offset.x < -20);
+
+    if (goRight) {
       animate(x, 500, { duration: 0.3 });
       onSwipe?.("right");
-    } else if (info.offset.x < -threshold) {
+    } else if (goLeft) {
       animate(x, -500, { duration: 0.3 });
       onSwipe?.("left");
     } else {
@@ -121,12 +142,21 @@ function SwipeCard({ pet, isTop, stackIndex, onSwipe, exitDirection }: SwipeCard
     }
   };
 
+  const handleOpenProfile = () => {
+    // Ignore the click that follows a drag gesture
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    navigate(`/pet/${pet.id}`);
+  };
+
   const exitX = exitDirection === "right" ? 500 : exitDirection === "left" ? -500 : 0;
 
   return (
     <motion.div
       className={cn(
-        "absolute inset-0 rounded-2xl overflow-hidden bg-card shadow-lg border border-border cursor-grab active:cursor-grabbing",
+        "absolute inset-0 rounded-2xl overflow-hidden bg-card shadow-lg border border-border cursor-grab active:cursor-grabbing touch-pan-y select-none",
         !isTop && "pointer-events-none"
       )}
       style={{
@@ -137,8 +167,12 @@ function SwipeCard({ pet, isTop, stackIndex, onSwipe, exitDirection }: SwipeCard
         zIndex: 10 - stackIndex,
       }}
       drag={isTop ? "x" : false}
+      dragDirectionLock
+      dragMomentum={false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.8}
+      onDragStart={isTop ? handleDragStart : undefined}
+      onDrag={isTop ? handleDrag : undefined}
       onDragEnd={isTop ? handleDragEnd : undefined}
       animate={
         isTop && exitDirection
@@ -147,7 +181,14 @@ function SwipeCard({ pet, isTop, stackIndex, onSwipe, exitDirection }: SwipeCard
       }
     >
       {/* Photo */}
-      <Link to={`/pet/${pet.id}`} className="block">
+      <div
+        role="link"
+        tabIndex={isTop ? 0 : -1}
+        onClick={handleOpenProfile}
+        onKeyDown={(e) => e.key === "Enter" && handleOpenProfile()}
+        className="block"
+      >
+
         <div className="relative h-[320px]">
           <img
             src={pet.photos[0]}
