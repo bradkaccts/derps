@@ -1,28 +1,49 @@
-## Problem
+# Simplify to a Derpdates-first app
 
-On the Derpdates grid, the match score sits in the top-right corner directly on the pet photo. Today it renders as a bare SVG ring + number + label text with no background. That fails on several real cards:
+The app currently ships two overlapping products at once: pet-to-pet Derpdates and pet adoption. Worse, Derpdates itself exists twice — a legacy version bolted onto the Home page (`Index.tsx` "Derpdates" view mode, `PlaydateCard`, `PlaydateContext`, Inbox "Derpdates" tab) and the newer, fuller module under `/playdates` (deck, quiz, matches, venues, safety). This plan hides the adoption surfaces and collapses the duplicate Derpdate experience into one.
 
-- Score 76 on the beagle (Captain Fluff) — the number nearly disappears into the tan fur.
-- Score 55 on Whiskers — cream/white cat background washes out the ring.
-- The "Great Match!" / "Worth a Sniff" label uses `text-muted-foreground`, which is unreadable on almost every photo.
-- The verified badge on the left already solves this by using a solid `bg-primary/90` pill — the score badge is the outlier.
+Nothing is deleted. Everything hidden goes behind a single feature flag so adoption can be switched back on for release two.
 
-## Recommendation
+## What the user will see
 
-**Recolor/restyle rather than relocate.** The top-right overlay position is the right pattern (it's a familiar dating-app convention, keeps the photo as the hero, and matches the Verified pill on the left). The fix is to give the badge its own opaque surface so it reads on any background — no layout shuffling required.
+- Opening the app lands directly on the Derpdates feed (swipe deck for your pet, matches, meetups).
+- Navigation shrinks to: Derpdates, Matches/Inbox, My Derp Friends, Profile — plus Places to Meet and Safety Center.
+- Gone from the interface: "Rehome a Derp" / listing creation, "My Applications", "Applicant Inbox", the adopt-a-pet swipe and grid browsing on Home, the "Apply to Adopt" flow on a pet's profile, and the max-adoption-fee preference.
+- The Inbox becomes a single conversation list (Derpdate chats) instead of the Adoptions/Derpdates tab split.
+- "My Derp Friends" becomes the list of pets you've matched or liked through Derpdates rather than an adoption shortlist.
 
-## Plan
+## Technical approach
 
-Edit `src/components/pets/MatchScoreBadge.tsx` only. No changes to `PlaydateCard.tsx` or business logic.
+**1. Feature flag**
+New `src/config/features.ts` exporting `FEATURES = { adoption: false }`. All hiding keys off this constant so re-enabling is one edit.
 
-1. **Wrap the ring in a solid chip.** Add a `rounded-full bg-card` (cream) container with `shadow-md` and a thin `ring-1 ring-border` around the SVG so the circle always sits on a known surface. The track circle stays `hsl(var(--border))`, the progress arc keeps its semantic color (primary / accent / muted).
-2. **Move the label into a pill under the ring.** Replace the bare `text-muted-foreground` label with a compact `rounded-full bg-card/95 backdrop-blur px-2 py-0.5 shadow-sm` pill so `🎾 Great Match!` / `👃 Worth a Sniff` stays legible. Text color switches to `text-foreground` (with the emoji carrying the semantic hue).
-3. **Tighten the small size.** At `size="sm"` the current 48px ring + separate label stack is taller than the Verified pill on the left, making the corner feel unbalanced. Reduce label to `text-[10px]` and pull it flush under the ring so the whole cluster matches the Verified pill's visual weight.
-4. **Keep semantic color logic intact.** The ring stroke and score number continue to use `text-primary` / `text-accent` / `text-muted-foreground` from the design tokens — only the surface behind them changes.
-5. **No other files touched.** `MatchScoreBadge` is also used on `PetProfile` at `size="lg"`; the same treatment improves readability there for free without any call-site changes.
+**2. Routing (`src/App.tsx`)**
+- `/` renders `PlaydatesFeed`.
+- `/playdates` stays as an alias so existing links keep working.
+- `/pet/:id`, `/create-listing`, `/my-applications`, `/applications-inbox` render only when `FEATURES.adoption` is true; otherwise those paths fall through to `NotFound`.
+- `ApplicationProvider` and `FavoritesProvider` stay mounted (cheap, and avoids touching consumers), but their UI entry points go away.
 
-### Technical notes
+**3. Navigation (`src/components/layout/AppLayout.tsx`)**
+- Drop the separate Home entry; Derpdates becomes the first tab and matches `/` plus `/playdates/*`.
+- Remove "My Applications", "Applicant Inbox", the "Rehome a Derp" sidebar button, and the mobile floating rehome button behind the flag.
+- Keep Places to Meet and Safety Center.
 
-- All colors stay as semantic tokens (`bg-card`, `text-foreground`, `ring-border`) — no hardcoded hex or `bg-white`.
-- The chip uses `bg-card` (not `bg-background`) so it reads as an elevated surface consistent with the rest of the card system.
-- No changes to `matching.ts`, `PlaydateCard.tsx`, or the grid layout in `Index.tsx`.
+**4. Home page (`src/pages/Index.tsx`)**
+No longer routed. Left in place unmodified so the adoption browse experience returns intact when the flag flips.
+
+**5. Legacy Derpdate duplication**
+The legacy `PlaydateContext` path (`Request Derpdate` on `PetProfile`, `PlaydateCard`, Inbox Derpdates tab) is only reachable through adoption screens, so hiding adoption retires it automatically. `PlaydateContext` stays mounted for the Inbox tab code until step 6 removes that tab's dependency.
+
+**6. Inbox (`src/pages/Inbox.tsx`)**
+When the flag is off, render the conversation list without the tab bar. Derpdate match threads already live under `/playdates/matches`; the Inbox keeps direct messaging only.
+
+**7. Profile (`src/pages/Profile.tsx`)**
+Hide the "Max adoption fee" card behind the flag. Pet registration, personality, and preference sections stay — they feed Derpdate matching.
+
+**8. My Derp Friends (`src/pages/MyDerps.tsx`)**
+Repoint from `FavoritesContext` (adoption shortlist) to the Derpdates match store, listing matched pets with a link into each match thread. Keep the empty state pointing at the Derpdates feed.
+
+## Out of scope
+
+- No file deletions and no database changes.
+- Adoption copy, screening form, and status tracker remain in the codebase untouched.
