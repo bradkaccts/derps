@@ -64,10 +64,53 @@ export function VenueBrowser({
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
   const { attributeStates } = useVenueConfidence();
 
+  // MAP-701 — results are measured from a movable search origin, so panning the
+  // map somewhere else can re-run the search over there.
+  const [searchOrigin, setSearchOrigin] = useState(HOME_GEO);
+  const [camera, setCamera] = useState<Camera>({ center: MAP_ANCHOR.center, zoom: 11 });
+  const [canSearchArea, setCanSearchArea] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const lastCameraRef = useRef<Camera>(camera);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
+  const movedFromHome =
+    searchOrigin.lat !== HOME_GEO.lat || searchOrigin.lng !== HOME_GEO.lng;
+
+  const evaluateDrift = (cam: Camera) => {
+    lastCameraRef.current = cam;
+    setCanSearchArea(
+      shouldOfferAreaSearch({
+        origin: searchOrigin,
+        center: { lat: cam.center[1], lng: cam.center[0] },
+        zoom: cam.zoom,
+        widthPx: mapWrapRef.current?.clientWidth || 640,
+      }),
+    );
+  };
+
+  const searchThisArea = () => {
+    const cam = lastCameraRef.current;
+    setSearchOrigin({ lat: cam.center[1], lng: cam.center[0] });
+    setCanSearchArea(false);
+    setSearching(true);
+  };
+
+  const resetArea = () => {
+    setSearchOrigin(HOME_GEO);
+    setCamera({ center: MAP_ANCHOR.center, zoom: 11 });
+    setCanSearchArea(false);
+    setSearching(true);
+  };
+
+  useEffect(() => {
+    if (!searching) return;
+    const t = window.setTimeout(() => setSearching(false), 420);
+    return () => window.clearTimeout(t);
+  }, [searching]);
+
   const results = useMemo(() => {
     // MP-404 — only verified catalog venues are ever selectable.
     const catalog = onSelect ? selectableVenues(mockVenues) : mockVenues;
-    const filtered = filterVenues(catalog, HOME_GEO, filters);
+    const filtered = filterVenues(catalog, searchOrigin, filters);
     const ranked = pairTraits
       ? rankVenuesForPair(filtered, pairTraits[0], pairTraits[1])
       : filtered;
@@ -87,7 +130,8 @@ export function VenueBrowser({
         }),
       };
     });
-  }, [filters, pairTraits, onSelect, attributeStates]);
+  }, [filters, pairTraits, onSelect, attributeStates, searchOrigin]);
+
 
   const features = useMemo(
     () =>
