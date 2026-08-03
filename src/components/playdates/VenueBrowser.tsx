@@ -413,7 +413,7 @@ function MapLegend({
           { kind: "disabled", label: "Not a fit for this pair" },
         ]
       : []),
-    ...(hasClusters ? [{ kind: "cluster", label: "Several spots — zoom in" }] : []),
+    ...(hasClusters ? [{ kind: "cluster", label: "Several spots — tap to expand" }] : []),
   ];
 
   return (
