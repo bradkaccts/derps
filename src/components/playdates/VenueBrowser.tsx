@@ -305,7 +305,7 @@ export function VenueBrowser({
       </p>
 
 
-      {results.length === 0 && (
+      {!searching && results.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="font-bold text-foreground">No venues match those filters</p>
           <p className="mt-1 text-sm text-muted-foreground">
