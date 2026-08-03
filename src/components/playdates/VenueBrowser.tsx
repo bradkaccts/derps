@@ -448,9 +448,7 @@ function MapLegend({
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="mt-1.5 max-w-[220px] text-[10px] leading-snug text-muted-foreground">
-        {HOME_AREA.description}
-      </p>
+
     </div>
   );
 }
