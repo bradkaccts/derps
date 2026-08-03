@@ -161,7 +161,7 @@ export function VenueBrowser({
           label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
           venues={features}
           camera={{ center: HOME_AREA.center, zoom: 11 }}
-          geofence={HOME_AREA}
+          geofence={null}
           selectedVenueId={selectedVenueId ?? null}
           onSelectVenue={(id) => {
             if (!id || !onSelect) return;
