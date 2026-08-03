@@ -144,6 +144,11 @@ export function VenueBrowser({
   );
 
 
+  // MAP-702 — filters live outside the search origin, so moving the map and
+  // re-searching keeps type, amenity and distance selections intact.
+  const activeFilterCount =
+    filters.types.length + filters.amenities.length + (filters.maxMiles !== 25 ? 1 : 0);
+
   const toggle = <T,>(list: T[], value: T): T[] =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
