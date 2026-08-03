@@ -263,29 +263,47 @@ export function VenueBrowser({
                     </span>
                   </div>
                 )}
-
+                <MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />
               </>
             }
           />
         </div>
       ) : null}
 
+      {searching ? (
+        <ul className="animate-fade-in space-y-3" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="rounded-xl border border-border p-4">
+              <Skeleton className="h-5 w-2/5" />
+              <Skeleton className="mt-2 h-3 w-3/5" />
+              <div className="mt-3 flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="animate-fade-in space-y-3">
+          {results.map(({ venue, distanceBand, recommendation }) => (
+            <li key={venue.id}>
+              <VenueRow
+                venue={venue}
+                distanceBand={distanceBand}
+                recommendation={recommendation}
+                aggregates={attributeStates(venue.id, venue.venueType)}
+                onSelect={onSelect}
+                selected={selectedVenueId === venue.id}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="sr-only" role="status" aria-live="polite">
+        {searching ? "Searching this area" : `${results.length} venues found`}
+      </p>
 
-
-      <ul className="space-y-3">
-        {results.map(({ venue, distanceBand, recommendation }) => (
-          <li key={venue.id}>
-            <VenueRow
-              venue={venue}
-              distanceBand={distanceBand}
-              recommendation={recommendation}
-              aggregates={attributeStates(venue.id, venue.venueType)}
-              onSelect={onSelect}
-              selected={selectedVenueId === venue.id}
-            />
-          </li>
-        ))}
-      </ul>
 
       {results.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
