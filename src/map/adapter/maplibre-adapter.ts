@@ -567,7 +567,14 @@ export async function createMapLibreAdapter(
     syncMarkers();
     emit("cameraChange", readCamera());
   });
-  map.on("click", () => emit("selectVenue", null));
+  map.on("click", () => {
+    // A tap on open map dismisses the tooltip and clears the selection.
+    selectedPopupDismissed = true;
+    hideVenuePopup(undefined, { keepSelected: false });
+    clusterPopup.remove();
+    emit("selectVenue", null);
+  });
+
 
   const readCamera = (): Camera => {
     const center = map.getCenter();
