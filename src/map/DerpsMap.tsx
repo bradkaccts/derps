@@ -38,7 +38,10 @@ export interface DerpsMapProps {
   overlay?: React.ReactNode;
   /** Fires when cluster bubbles appear or disappear, so a legend can adapt. */
   onClustersChanged?: (hasClusters: boolean) => void;
+  /** Fires when the renderer fails to start, or errors after it is running. */
+  onError?: (error: Error) => void;
 }
+
 
 
 function prefersReducedMotion() {
