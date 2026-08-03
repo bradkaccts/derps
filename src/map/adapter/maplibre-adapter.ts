@@ -224,7 +224,7 @@ export async function createMapLibreAdapter(
     source: GEOFENCE_SOURCE,
     paint: { "fill-color": palette.geofenceFill },
   });
-  // Soft outer halo so the home area reads as a deliberate, blurred zone on
+  // Soft outer halo so the shaded area reads as a deliberate zone on
   // top of the basemap rather than a stray shape (MAP-612).
   map.addLayer({
     id: "venue-geofence-glow",
@@ -245,8 +245,8 @@ export async function createMapLibreAdapter(
   });
 
   /* ---------------------------------------------------------------- *
-   * Geofence tooltip — hover (pointer) and tap (touch) both explain what
-   * the blurred circle is, since the shape alone can't say it.
+   * Area tooltip — hover (pointer) and tap (touch) describe the shaded
+   * area, since the shape alone can't say it.
    * ---------------------------------------------------------------- */
   const geofencePopup = new Popup({
     closeButton: false,
@@ -259,9 +259,9 @@ export async function createMapLibreAdapter(
     // Never two tooltips at once.
     hideVenuePopup(undefined, { keepSelected: false });
 
-    const label = String(props.label || "Your home area");
+    const label = String(props.label || "Search area");
     const description = String(
-      props.description || "A blurred circle around your neighbourhood — never your exact address.",
+      props.description || "The area this map is currently centred on.",
     );
     geofencePopup
       .setLngLat(lngLat)

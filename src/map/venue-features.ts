@@ -2,8 +2,8 @@
  * Product data → map features (spec §7.2).
  *
  * MAP-501 — venue coordinates are exact because venues are public places. Pet
- * and user coordinates never reach this module; approximate home position is
- * expressed as a geofence circle, not a point.
+ * and user coordinates never reach this module; approximate position is
+ * expressed as a coarse area, not a point.
  */
 import { HOME_GEO } from "@/hooks/use-playdate-feed";
 import {
@@ -97,17 +97,14 @@ export function venueResultsToFeatures(
 }
 
 
-/** The user's rough area — a blurred circle, never a pin. */
-export const HOME_AREA: GeofenceCircle = {
+/** Default camera anchor for the venue map — never rendered as a shape. */
+export const MAP_ANCHOR: GeofenceCircle = {
   center: [HOME_GEO.lng, HOME_GEO.lat],
   radiusMeters: 1200,
-  label: "Your home area",
-  description:
-    "A blurred ~1.2 km circle around your neighbourhood. Other Derp parents only ever see this area — never your exact address.",
 };
 
 
-export function boundsFor(features: MapVenueFeature[], home = HOME_AREA) {
+export function boundsFor(features: MapVenueFeature[], home = MAP_ANCHOR) {
   const lngs = [home.center[0], ...features.map((f) => f.lng)];
   const lats = [home.center[1], ...features.map((f) => f.lat)];
   return [

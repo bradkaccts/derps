@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mockVenues } from "@/data/mock-venues";
 import { DerpsMap } from "@/map/DerpsMap";
-import { HOME_AREA, venueResultsToFeatures } from "@/map/venue-features";
+import { MAP_ANCHOR, venueResultsToFeatures } from "@/map/venue-features";
 import { HOME_GEO } from "@/hooks/use-playdate-feed";
 import {
   AMENITY_EMOJI,
@@ -160,7 +160,7 @@ export function VenueBrowser({
           className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted"
           label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
           venues={features}
-          camera={{ center: HOME_AREA.center, zoom: 11 }}
+          camera={{ center: MAP_ANCHOR.center, zoom: 11 }}
           geofence={null}
           selectedVenueId={selectedVenueId ?? null}
           onSelectVenue={(id) => {
@@ -379,11 +379,8 @@ function FilterChip({
   );
 }
 
-/** Always-visible key for the blurred circle, with the full explanation on hover/tap. */
 /**
- * MAP-618 — an always-visible key for every symbol the map draws. The
- * home-area privacy note stays on screen rather than hiding in a tooltip,
- * since that is the part people most need to read.
+ * MAP-618 — an always-visible key for every symbol the map draws.
  */
 function MapLegend({
   selectable,
