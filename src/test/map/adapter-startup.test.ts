@@ -94,10 +94,11 @@ describe("createMapLibreAdapter startup", () => {
 
   it("rejects on a fatal pre-load error", async () => {
     const promise = startAdapter();
-    const assertion = expect(promise).rejects.toThrow(/worker exploded/);
+    promise.catch(() => {});
     await vi.advanceTimersByTimeAsync(0);
     FakeMap.instances[0].fire("error", { error: new Error("worker exploded") });
-    await assertion;
+    await expect(promise).rejects.toThrow(/worker exploded/);
+
   });
 
   it("ignores source-level errors and still resolves on load", async () => {
