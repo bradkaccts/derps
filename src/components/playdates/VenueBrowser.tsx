@@ -38,9 +38,9 @@ const DISTANCE_OPTIONS = [3, 10, 25, 50];
 
 /**
  * MP-403 — filter by amenity, venue type and distance, with list and map views
- * of the same result set. UI-706 — the list is a fully equivalent view, not a
- * degraded fallback: it is the primary view for screen-reader and low-vision
- * users, and it is the default here.
+ * of the same result set. The map is the default view for spatial browsing; the
+ * list remains a fully equivalent, accessible alternative for screen-reader and
+ * low-vision users.
  *
  * The map is schematic rather than a tiled basemap. That is deliberate for
  * this build — venue positions are relative and approximate, which keeps the
@@ -57,7 +57,7 @@ export function VenueBrowser({
   selectedVenueId?: string;
   className?: string;
 }) {
-  const [view, setView] = useState<"list" | "map">("list");
+  const [view, setView] = useState<"list" | "map">("map");
   const [hasClusters, setHasClusters] = useState(false);
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
   const { attributeStates } = useVenueConfidence();
