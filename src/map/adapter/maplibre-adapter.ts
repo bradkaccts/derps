@@ -410,10 +410,13 @@ export async function createMapLibreAdapter(
   const clusterPopup = new Popup({
     closeButton: false,
     closeOnClick: false,
-    className: "derps-map-popup",
-    maxWidth: "200px",
+    className: "derps-map-popup derps-map-cluster-popup",
+    maxWidth: "260px",
     offset: 18,
   });
+  /** Hover hint vs. the expanded list are different states of one popup. */
+  let clusterExpanded = false;
+
 
   const makePin = (venue: MapVenueFeature) => {
     const el = document.createElement("button");
@@ -464,35 +467,137 @@ export async function createMapLibreAdapter(
     return el;
   };
 
-  const makeCluster = (count: number, coords: [number, number]) => {
+  const CLUSTER_LIST_MAX = 6;
+
+  const makeCluster = (group: MapVenueFeature[], coords: [number, number]) => {
+    const count = group.length;
     const el = document.createElement("button");
     el.type = "button";
     el.className = "derps-map-cluster";
-    const label = `${count} spots here — zoom in`;
-    el.setAttribute("aria-label", label);
+    const hint = `${count} spots here — tap to see them`;
+    el.setAttribute("aria-label", hint);
+    el.setAttribute("aria-expanded", "false");
     el.textContent = String(count);
-    const showTip = () => {
-      hideVenuePopup(undefined, { keepSelected: false });
-      clusterPopup.setLngLat(coords).setText(label).addTo(map);
-    };
-    el.addEventListener("pointerenter", (event) => {
-      if ((event.pointerType || "mouse") !== "mouse") return;
-      showTip();
-    });
-    el.addEventListener("pointerleave", () => clusterPopup.remove());
-    el.addEventListener("focus", showTip);
-    el.addEventListener("blur", () => clusterPopup.remove());
-    el.addEventListener("click", (event) => {
-      event.stopPropagation();
+
+    const closeCluster = () => {
+      clusterExpanded = false;
+      el.setAttribute("aria-expanded", "false");
+      clusterExpanded = false;
       clusterPopup.remove();
+    };
+
+    const zoomIn = () => {
+      closeCluster();
       map.easeTo({
         center: coords,
         zoom: Math.min(map.getZoom() + 2, CLUSTER_MAX_ZOOM + 1),
         duration: reducedMotion ? 0 : 400,
       });
+    };
+
+    /** Hover/focus hint — cheap, non-committal. */
+    const showTip = () => {
+      if (clusterExpanded) return;
+      hideVenuePopup(undefined, { keepSelected: false });
+      clusterPopup.setLngLat(coords).setText(hint).addTo(map);
+    };
+
+    /** Tap/click — expand the cluster into a readable list of its venues. */
+    const expandCluster = () => {
+      hideVenuePopup(undefined, { keepSelected: false });
+      clusterExpanded = true;
+      el.setAttribute("aria-expanded", "true");
+
+      const root = document.createElement("div");
+      root.className = "derps-map-tip derps-map-cluster-list";
+
+      const title = document.createElement("strong");
+      title.className = "derps-map-popup-title";
+      title.textContent = `${count} spots here`;
+      root.appendChild(title);
+
+      const help = document.createElement("span");
+      help.className = "derps-map-popup-body";
+      help.textContent = "Pick one from the list, or zoom in to spread them out.";
+      root.appendChild(help);
+
+      const list = document.createElement("ul");
+      list.className = "derps-map-cluster-items";
+      for (const venue of group.slice(0, CLUSTER_LIST_MAX)) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "derps-map-cluster-item";
+        button.dataset.venueId = venue.id;
+        if (!venue.selectable) button.dataset.disabled = "true";
+
+        const name = document.createElement("span");
+        name.className = "derps-map-cluster-item-name";
+        name.textContent = `${venue.glyph} ${venue.name}`;
+        button.appendChild(name);
+
+        const meta = document.createElement("span");
+        meta.className = "derps-map-cluster-item-meta";
+        meta.textContent = venue.blockedReason
+          ? venue.blockedReason
+          : `${venue.typeLabel} · ${venue.distanceBand} away`;
+        button.appendChild(meta);
+
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          closeCluster();
+          selectedPopupDismissed = false;
+          emit("selectVenue", venue.id);
+          showVenuePopup(venue);
+        });
+        item.appendChild(button);
+        list.appendChild(item);
+      }
+      root.appendChild(list);
+
+      if (count > CLUSTER_LIST_MAX) {
+        const more = document.createElement("span");
+        more.className = "derps-map-popup-body";
+        more.textContent = `+${count - CLUSTER_LIST_MAX} more — zoom in to see them all`;
+        root.appendChild(more);
+      }
+
+      const zoomButton = document.createElement("button");
+      zoomButton.type = "button";
+      zoomButton.className = "derps-map-tip-action";
+      zoomButton.textContent = "Zoom in here";
+      zoomButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        zoomIn();
+      });
+      root.appendChild(zoomButton);
+
+      clusterPopup.setLngLat(coords).setDOMContent(root).addTo(map);
+    };
+
+    el.addEventListener("pointerenter", (event) => {
+      if ((event.pointerType || "mouse") !== "mouse") return;
+      showTip();
+    });
+    el.addEventListener("pointerleave", () => {
+      if (!clusterExpanded) clusterPopup.remove();
+    });
+    el.addEventListener("focus", showTip);
+    el.addEventListener("blur", () => {
+      if (!clusterExpanded) clusterPopup.remove();
+    });
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeCluster();
+    });
+    el.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (clusterExpanded) closeCluster();
+      else expandCluster();
     });
     return el;
   };
+
+
 
 
   const CLUSTER_PX = 56;
@@ -541,7 +646,7 @@ export async function createMapLibreAdapter(
       }
 
       const el = isCluster
-        ? makeCluster(group.venues.length, coords)
+        ? makeCluster(group.venues, coords)
         : makePin(group.venues[0]);
       if (!isCluster && group.venues[0].id === selectedId) el.dataset.selected = "true";
       markers.set(key, new Marker({ element: el }).setLngLat(coords).addTo(map));
@@ -574,6 +679,7 @@ export async function createMapLibreAdapter(
     // A tap on open map dismisses the tooltip and clears the selection.
     selectedPopupDismissed = true;
     hideVenuePopup(undefined, { keepSelected: false });
+    clusterExpanded = false;
     clusterPopup.remove();
     emit("selectVenue", null);
   });
@@ -678,6 +784,7 @@ export async function createMapLibreAdapter(
       destroyed = true;
       clearTimeout(hoverTimer);
       venuePopup.remove();
+      clusterExpanded = false;
       clusterPopup.remove();
       geofencePopup.remove();
       for (const marker of markers.values()) marker.remove();
