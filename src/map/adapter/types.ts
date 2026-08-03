@@ -80,6 +80,8 @@ export interface MapAdapter {
   setPadding(padding: Padding, opts?: { animate?: boolean }): void;
   setVenues(venues: MapVenueFeature[]): void;
   setSelectedVenue(id: string | null): void;
+  /** Closes any open venue tooltip or expanded cluster list. */
+  dismissOverlays(): void;
   setGeofence(circle: GeofenceCircle | null): void;
   setVariant(variant: ThemeName): void;
   on<K extends keyof MapAdapterEvents>(event: K, handler: MapAdapterEvents[K]): () => void;
