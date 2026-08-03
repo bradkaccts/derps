@@ -38,6 +38,8 @@ export interface DerpsMapProps {
   overlay?: React.ReactNode;
   /** Fires when cluster bubbles appear or disappear, so a legend can adapt. */
   onClustersChanged?: (hasClusters: boolean) => void;
+  /** Fires after the camera settles, so callers can offer an area re-search. */
+  onCameraChange?: (camera: Camera) => void;
   /** Fires when the renderer fails to start, or errors after it is running. */
   onError?: (error: Error) => void;
 }
@@ -63,6 +65,7 @@ export function DerpsMap({
   fallback = null,
   overlay = null,
   onClustersChanged,
+  onCameraChange,
   onError,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,6 +74,8 @@ export function DerpsMap({
   selectRef.current = onSelectVenue;
   const clustersRef = useRef(onClustersChanged);
   clustersRef.current = onClustersChanged;
+  const cameraChangeRef = useRef(onCameraChange);
+  cameraChangeRef.current = onCameraChange;
   const errorRef = useRef(onError);
   errorRef.current = onError;
 
@@ -120,6 +125,7 @@ export function DerpsMap({
         adapterRef.current = adapter;
         adapter.on("selectVenue", (id) => selectRef.current?.(id));
         adapter.on("clustersChanged", (has) => clustersRef.current?.(has));
+        adapter.on("cameraChange", (cam) => cameraChangeRef.current?.(cam));
         adapter.on("error", (err) => errorRef.current?.(err));
         setStatus("ready");
       } catch (err) {
@@ -142,6 +148,17 @@ export function DerpsMap({
   useEffect(() => {
     if (status === "ready") adapterRef.current?.setVenues(venues);
   }, [venues, status]);
+
+  // Camera prop changes after mount are recentring requests (e.g. "reset to my
+  // area"); the user's own panning is never fought because the prop only moves
+  // when product code decides it should.
+  useEffect(() => {
+    if (status !== "ready") return;
+    adapterRef.current?.setCamera(camera, { animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera.center[0], camera.center[1], camera.zoom, status]);
+
+
 
   useEffect(() => {
     if (status === "ready") adapterRef.current?.setSelectedVenue(selectedVenueId);
