@@ -87,9 +87,18 @@ export function DerpsMap({
     if (!container) return;
 
     (async () => {
-      const { createMapLibreAdapter, isWebglSupported } = await import(
-        "./adapter/maplibre-adapter"
-      );
+      let importedAdapter: typeof import("./adapter/maplibre-adapter");
+      try {
+        importedAdapter = await import("./adapter/maplibre-adapter");
+      } catch (err) {
+        // A failed chunk/worker fetch must not leave a spinner on screen.
+        if (!cancelled) {
+          errorRef.current?.(err instanceof Error ? err : new Error("Map bundle failed to load"));
+          setStatus("failed");
+        }
+        return;
+      }
+      const { createMapLibreAdapter, isWebglSupported } = importedAdapter;
       if (cancelled) return;
       if (!isWebglSupported()) {
         setStatus("unsupported");
@@ -111,11 +120,16 @@ export function DerpsMap({
         adapterRef.current = adapter;
         adapter.on("selectVenue", (id) => selectRef.current?.(id));
         adapter.on("clustersChanged", (has) => clustersRef.current?.(has));
+        adapter.on("error", (err) => errorRef.current?.(err));
         setStatus("ready");
-      } catch {
-        if (!cancelled) setStatus("unsupported");
+      } catch (err) {
+        if (!cancelled) {
+          errorRef.current?.(err instanceof Error ? err : new Error("Map failed to start"));
+          setStatus("failed");
+        }
       }
     })();
+
 
     return () => {
       cancelled = true;
