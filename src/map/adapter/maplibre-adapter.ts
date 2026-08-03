@@ -668,9 +668,14 @@ export async function createMapLibreAdapter(
     },
     destroy() {
       destroyed = true;
+      clearTimeout(hoverTimer);
+      venuePopup.remove();
+      clusterPopup.remove();
+      geofencePopup.remove();
       for (const marker of markers.values()) marker.remove();
       markers.clear();
       map.remove();
     },
+
   };
 }
