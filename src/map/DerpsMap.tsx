@@ -65,6 +65,7 @@ export function DerpsMap({
   fallback = null,
   overlay = null,
   onClustersChanged,
+  onCameraChange,
   onError,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
