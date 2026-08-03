@@ -169,9 +169,12 @@ export function DerpsMap({
     "--derps-map-surface": palette.background,
   } as React.CSSProperties;
 
-  if (status === "unsupported") {
+  // Unsupported (no WebGL) and failed (worker/bundle/startup) both fall back to
+  // the list, which is an equivalent view — never a blank canvas or a spinner.
+  if (status === "unsupported" || status === "failed") {
     return <>{fallback}</>;
   }
+
 
   return (
     <div className={className} style={cssVars}>
