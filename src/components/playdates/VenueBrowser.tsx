@@ -196,35 +196,66 @@ export function VenueBrowser({
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {results.length} verified {results.length === 1 ? "venue" : "venues"} nearby. Every meetup on
-        Derps happens somewhere public and checked — you can't propose a home address.
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {results.length} verified {results.length === 1 ? "venue" : "venues"}{" "}
+        {movedFromHome ? "in this area" : "nearby"}. Every meetup on Derps happens somewhere public
+        and checked — you can't propose a home address.
+        {movedFromHome && (
+          <button
+            type="button"
+            onClick={resetArea}
+            className="ml-1.5 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            <LocateFixed className="h-3.5 w-3.5" aria-hidden />
+            Reset to my area
+          </button>
+        )}
       </p>
 
       {view === "map" ? (
-        <DerpsMap
-          className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted"
-          label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
-          venues={features}
-          camera={{ center: MAP_ANCHOR.center, zoom: 11 }}
-          geofence={null}
-          selectedVenueId={selectedVenueId ?? null}
-          onSelectVenue={(id) => {
-            if (!id || !onSelect) return;
-            const hit = results.find((r) => r.venue.id === id);
-            if (hit && (hit.recommendation?.suitable ?? true)) onSelect(hit.venue);
-          }}
-          fallback={
-            <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-              Your browser can't show the map, so here's the full list instead — it has everything
-              the map does.
-            </p>
-          }
-          onClustersChanged={setHasClusters}
-          overlay={<MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />}
-        />
-
+        <div ref={mapWrapRef}>
+          <DerpsMap
+            className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted"
+            label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
+            venues={features}
+            camera={camera}
+            geofence={null}
+            selectedVenueId={selectedVenueId ?? null}
+            onSelectVenue={(id) => {
+              if (!id || !onSelect) return;
+              const hit = results.find((r) => r.venue.id === id);
+              if (hit && (hit.recommendation?.suitable ?? true)) onSelect(hit.venue);
+            }}
+            fallback={
+              <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                Your browser can't show the map, so here's the full list instead — it has everything
+                the map does.
+              </p>
+            }
+            onClustersChanged={setHasClusters}
+            onCameraChange={evaluateDrift}
+            overlay={
+              <>
+                {(canSearchArea || searching) && (
+                  <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={searchThisArea}
+                      disabled={searching}
+                      className="btn-bouncy pointer-events-auto flex min-h-[40px] items-center gap-2 rounded-full border border-border bg-card/95 px-4 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur disabled:opacity-70"
+                    >
+                      <Search className="h-4 w-4 text-primary" aria-hidden />
+                      {searching ? "Searching…" : "Search this area"}
+                    </button>
+                  </div>
+                )}
+                <MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />
+              </>
+            }
+          />
+        </div>
       ) : null}
+
 
 
       <ul className="space-y-3">
