@@ -71,6 +71,7 @@ export function VenueBrowser({
   const [camera, setCamera] = useState<Camera>({ center: MAP_ANCHOR.center, zoom: 11 });
   const [canSearchArea, setCanSearchArea] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [recenterNonce, setRecenterNonce] = useState(0);
   const lastCameraRef = useRef<Camera>(camera);
   const mapWrapRef = useRef<HTMLDivElement>(null);
   const movedFromHome =
@@ -96,8 +97,11 @@ export function VenueBrowser({
   };
 
   const resetArea = () => {
+    // MAP-703 — animate back to the original focus area and drop any open
+    // tooltip or expanded cluster from wherever the user had panned to.
     setSearchOrigin(HOME_GEO);
     setCamera({ center: MAP_ANCHOR.center, zoom: 11 });
+    setRecenterNonce((n) => n + 1);
     setCanSearchArea(false);
     setSearching(true);
   };
@@ -248,6 +252,7 @@ export function VenueBrowser({
             }
             onClustersChanged={setHasClusters}
             onCameraChange={evaluateDrift}
+            recenterNonce={recenterNonce}
             overlay={
               <>
                 {(canSearchArea || searching) && (
