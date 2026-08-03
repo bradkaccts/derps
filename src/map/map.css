@@ -198,3 +198,51 @@
   border-color: var(--derps-map-cluster);
   background: var(--derps-map-cluster);
 }
+
+/* Expanded cluster list (MAP-63x) — tapping a cluster reveals its venues. */
+.derps-map-cluster-popup .maplibregl-popup-content {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.derps-map-cluster-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.derps-map-cluster-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--derps-map-pin);
+  border-radius: 10px;
+  padding: 6px 8px;
+  text-align: left;
+  background: var(--derps-map-surface);
+  cursor: pointer;
+}
+
+.derps-map-cluster-item:hover,
+.derps-map-cluster-item:focus-visible {
+  border-color: var(--derps-map-pin-selected);
+}
+
+.derps-map-cluster-item[data-disabled="true"] {
+  border-color: var(--derps-map-pin-disabled);
+  opacity: 0.75;
+}
+
+.derps-map-cluster-item-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.derps-map-cluster-item-meta {
+  font-size: 11px;
+  opacity: 0.75;
+}

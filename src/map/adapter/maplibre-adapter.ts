@@ -483,7 +483,7 @@ export async function createMapLibreAdapter(
       clusterExpanded = false;
       el.setAttribute("aria-expanded", "false");
       clusterExpanded = false;
-    clusterPopup.remove();
+      clusterPopup.remove();
     };
 
     const zoomIn = () => {
@@ -785,7 +785,7 @@ export async function createMapLibreAdapter(
       clearTimeout(hoverTimer);
       venuePopup.remove();
       clusterExpanded = false;
-    clusterPopup.remove();
+      clusterPopup.remove();
       geofencePopup.remove();
       for (const marker of markers.values()) marker.remove();
       markers.clear();
