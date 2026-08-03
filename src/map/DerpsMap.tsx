@@ -125,6 +125,7 @@ export function DerpsMap({
         adapterRef.current = adapter;
         adapter.on("selectVenue", (id) => selectRef.current?.(id));
         adapter.on("clustersChanged", (has) => clustersRef.current?.(has));
+        adapter.on("cameraChange", (cam) => cameraChangeRef.current?.(cam));
         adapter.on("error", (err) => errorRef.current?.(err));
         setStatus("ready");
       } catch (err) {
