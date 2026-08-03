@@ -408,8 +408,8 @@ function MapLegend({
   }
 
   const rows: { kind: string; label: string }[] = [
-    { kind: "home", label: HOME_AREA.label ?? "Your home area" },
     { kind: "pin", label: "Meet-up spot" },
+
     ...(selectable
       ? [
           { kind: "selected", label: "Selected" },
