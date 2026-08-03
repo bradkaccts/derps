@@ -161,7 +161,7 @@ export function VenueBrowser({
           label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
           venues={features}
           camera={{ center: HOME_AREA.center, zoom: 11 }}
-          geofence={HOME_AREA}
+          geofence={null}
           selectedVenueId={selectedVenueId ?? null}
           onSelectVenue={(id) => {
             if (!id || !onSelect) return;
@@ -408,8 +408,8 @@ function MapLegend({
   }
 
   const rows: { kind: string; label: string }[] = [
-    { kind: "home", label: HOME_AREA.label ?? "Your home area" },
     { kind: "pin", label: "Meet-up spot" },
+
     ...(selectable
       ? [
           { kind: "selected", label: "Selected" },
@@ -448,9 +448,7 @@ function MapLegend({
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="mt-1.5 max-w-[220px] text-[10px] leading-snug text-muted-foreground">
-        {HOME_AREA.description}
-      </p>
+
     </div>
   );
 }
