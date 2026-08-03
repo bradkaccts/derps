@@ -765,6 +765,15 @@ export async function createMapLibreAdapter(
       }
     },
 
+    dismissOverlays() {
+      // MAP-703 — "reset to my area" clears transient map chrome so the user
+      // lands on a clean view of their own neighbourhood.
+      selectedPopupDismissed = true;
+      hideVenuePopup(undefined, { keepSelected: false });
+      clusterExpanded = false;
+      clusterPopup.remove();
+    },
+
     setGeofence(circle) {
       const source = map.getSource(GEOFENCE_SOURCE) as GeoJSONSource | undefined;
       source?.setData(
