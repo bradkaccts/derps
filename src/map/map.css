@@ -100,6 +100,72 @@
   opacity: 0.85;
 }
 
+/* Venue pin tooltip (MAP-62x) — hover on a mouse, tap on touch. */
+.derps-map-venue-popup .maplibregl-popup-content {
+  gap: 5px;
+  max-width: 260px;
+}
+
+.derps-map-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.derps-map-tip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.derps-map-tip-chip {
+  border-radius: 9999px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  background: color-mix(in srgb, var(--derps-map-pin) 12%, transparent);
+  color: inherit;
+}
+
+.derps-map-tip-chip[data-tone="confirmed"] {
+  background: color-mix(in srgb, var(--derps-map-pin-selected) 18%, transparent);
+}
+
+.derps-map-tip-chip[data-tone="mixed"] {
+  background: hsl(var(--destructive) / 0.12);
+  color: hsl(var(--destructive));
+}
+
+.derps-map-tip-blocked {
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--destructive));
+}
+
+.derps-map-tip-action {
+  margin-top: 2px;
+  border-radius: 9999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--derps-map-pin-selected);
+  color: var(--derps-map-surface);
+  transition: filter 120ms ease;
+}
+
+.derps-map-tip-action:hover {
+  filter: brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derps-map-tip-action {
+    transition: none;
+  }
+}
+
+
 /* Always-visible map key (MAP-618). Swatches reuse the marker custom
    properties so the legend can never drift from what the map draws. */
 .derps-map-legend-swatch {

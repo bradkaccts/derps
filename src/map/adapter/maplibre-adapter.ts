@@ -256,6 +256,9 @@ export async function createMapLibreAdapter(
   });
 
   const showGeofencePopup = (lngLat: LngLatLike, props: Record<string, unknown>) => {
+    // Never two tooltips at once.
+    hideVenuePopup(undefined, { keepSelected: false });
+
     const label = String(props.label || "Your home area");
     const description = String(
       props.description || "A blurred circle around your neighbourhood — never your exact address.",
@@ -305,6 +308,113 @@ export async function createMapLibreAdapter(
    * DOM anyway, and it keeps marker sync independent of tile parsing.
    * ---------------------------------------------------------------- */
 
+  /* ---------------------------------------------------------------- *
+   * Pin tooltips (MAP-62x) — hover on a mouse, tap on touch.
+   *
+   * One popup instance is reused for every pin: two tooltips on screen at once
+   * is noise, and reusing the instance keeps the DOM churn to the content.
+   * Content is built as nodes, never interpolated HTML — venue names and rules
+   * are user-facing strings and must not be parsed as markup.
+   * ---------------------------------------------------------------- */
+  const venuePopup = new Popup({
+    closeButton: false,
+    closeOnClick: false,
+    className: "derps-map-popup derps-map-venue-popup",
+    maxWidth: "260px",
+    offset: 18,
+  });
+
+  let activeVenueId: string | null = null;
+  let selectedPopupDismissed = false;
+  let hoverTimer: ReturnType<typeof setTimeout> | undefined;
+  const HOVER_DELAY_MS = 120;
+
+  const venuePopupContent = (venue: MapVenueFeature) => {
+    const root = document.createElement("div");
+    root.className = "derps-map-tip";
+
+    const title = document.createElement("strong");
+    title.className = "derps-map-popup-title";
+    title.textContent = venue.name;
+    root.appendChild(title);
+
+    const meta = document.createElement("span");
+    meta.className = "derps-map-popup-body";
+    meta.textContent = `${venue.typeLabel} · ${venue.distanceBand} away`;
+    root.appendChild(meta);
+
+    if (venue.amenityChips?.length) {
+      const chips = document.createElement("div");
+      chips.className = "derps-map-tip-chips";
+      for (const chip of venue.amenityChips) {
+        const node = document.createElement("span");
+        node.className = "derps-map-tip-chip";
+        node.dataset.tone = chip.tone;
+        node.textContent = chip.note ? `${chip.label} · ${chip.note}` : chip.label;
+        chips.appendChild(node);
+      }
+      root.appendChild(chips);
+    }
+
+    if (venue.detailLine) {
+      const detail = document.createElement("span");
+      detail.className = "derps-map-popup-body";
+      detail.textContent = venue.detailLine;
+      root.appendChild(detail);
+    }
+
+    if (venue.blockedReason) {
+      const blocked = document.createElement("span");
+      blocked.className = "derps-map-tip-blocked";
+      blocked.textContent = venue.blockedReason;
+      root.appendChild(blocked);
+    } else if (venue.actionLabel) {
+      const action = document.createElement("button");
+      action.type = "button";
+      action.className = "derps-map-tip-action";
+      action.textContent = venue.actionLabel;
+      action.addEventListener("click", (event) => {
+        event.stopPropagation();
+        emit("selectVenue", venue.id);
+      });
+      root.appendChild(action);
+    }
+
+    return root;
+  };
+
+  const showVenuePopup = (venue: MapVenueFeature) => {
+    geofencePopup.remove();
+    activeVenueId = venue.id;
+    venuePopup
+      .setLngLat([venue.lng, venue.lat])
+      .setDOMContent(venuePopupContent(venue))
+      .addTo(map);
+  };
+
+  /** The chosen venue keeps its tooltip, so the current pick stays labelled. */
+  const restoreSelectedPopup = () => {
+    if (selectedPopupDismissed || !selectedId) return;
+    const selected = venues.find((v) => v.id === selectedId);
+    if (selected) showVenuePopup(selected);
+  };
+
+  const hideVenuePopup = (id?: string, { keepSelected = true } = {}) => {
+    clearTimeout(hoverTimer);
+    if (id && activeVenueId !== id) return;
+    venuePopup.remove();
+    activeVenueId = null;
+    if (keepSelected) restoreSelectedPopup();
+  };
+
+  const clusterPopup = new Popup({
+    closeButton: false,
+    closeOnClick: false,
+    className: "derps-map-popup",
+    maxWidth: "200px",
+    offset: 18,
+  });
+
   const makePin = (venue: MapVenueFeature) => {
     const el = document.createElement("button");
     el.type = "button";
@@ -319,8 +429,36 @@ export async function createMapLibreAdapter(
     glyph.setAttribute("aria-hidden", "true");
     glyph.textContent = venue.glyph;
     el.appendChild(glyph);
+
+    // Touch has no hover, so a tap opens the tooltip and the tooltip's own
+    // action commits the choice — a tap must never silently pick a venue.
+    let lastPointerType = "mouse";
+    el.addEventListener("pointerdown", (event) => {
+      lastPointerType = event.pointerType || "mouse";
+    });
+    el.addEventListener("pointerenter", (event) => {
+      if ((event.pointerType || "mouse") !== "mouse") return;
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => showVenuePopup(venue), HOVER_DELAY_MS);
+    });
+    el.addEventListener("pointerleave", () => hideVenuePopup(venue.id));
+    el.addEventListener("focus", () => {
+      selectedPopupDismissed = false;
+      showVenuePopup(venue);
+    });
+    el.addEventListener("blur", () => hideVenuePopup(venue.id));
+    el.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      selectedPopupDismissed = true;
+      hideVenuePopup(undefined, { keepSelected: false });
+    });
     el.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (lastPointerType !== "mouse" && venue.actionLabel) {
+        selectedPopupDismissed = false;
+        showVenuePopup(venue);
+        return;
+      }
       emit("selectVenue", venue.id);
     });
     return el;
@@ -330,10 +468,23 @@ export async function createMapLibreAdapter(
     const el = document.createElement("button");
     el.type = "button";
     el.className = "derps-map-cluster";
-    el.setAttribute("aria-label", `${count} venues here — zoom in`);
+    const label = `${count} spots here — zoom in`;
+    el.setAttribute("aria-label", label);
     el.textContent = String(count);
+    const showTip = () => {
+      hideVenuePopup(undefined, { keepSelected: false });
+      clusterPopup.setLngLat(coords).setText(label).addTo(map);
+    };
+    el.addEventListener("pointerenter", (event) => {
+      if ((event.pointerType || "mouse") !== "mouse") return;
+      showTip();
+    });
+    el.addEventListener("pointerleave", () => clusterPopup.remove());
+    el.addEventListener("focus", showTip);
+    el.addEventListener("blur", () => clusterPopup.remove());
     el.addEventListener("click", (event) => {
       event.stopPropagation();
+      clusterPopup.remove();
       map.easeTo({
         center: coords,
         zoom: Math.min(map.getZoom() + 2, CLUSTER_MAX_ZOOM + 1),
@@ -342,6 +493,7 @@ export async function createMapLibreAdapter(
     });
     return el;
   };
+
 
   const CLUSTER_PX = 56;
   let hasClusters = false;
@@ -418,7 +570,14 @@ export async function createMapLibreAdapter(
     syncMarkers();
     emit("cameraChange", readCamera());
   });
-  map.on("click", () => emit("selectVenue", null));
+  map.on("click", () => {
+    // A tap on open map dismisses the tooltip and clears the selection.
+    selectedPopupDismissed = true;
+    hideVenuePopup(undefined, { keepSelected: false });
+    clusterPopup.remove();
+    emit("selectVenue", null);
+  });
+
 
   const readCamera = (): Camera => {
     const center = map.getCenter();
@@ -469,8 +628,13 @@ export async function createMapLibreAdapter(
           geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
         })),
       });
+      // Pin elements close over their venue for the tooltip, so stale markers
+      // are dropped rather than repositioned when the data changes.
+      for (const marker of markers.values()) marker.remove();
+      markers.clear();
       syncMarkers();
     },
+
     setSelectedVenue(id) {
       // MAP-31x — feature state, not a source swap.
       if (selectedId) {
@@ -485,7 +649,16 @@ export async function createMapLibreAdapter(
         if (el.dataset.venueId === id) el.dataset.selected = "true";
         else delete el.dataset.selected;
       }
+
+      selectedPopupDismissed = false;
+      if (id) {
+        const selected = venues.find((v) => v.id === id);
+        if (selected) showVenuePopup(selected);
+      } else {
+        hideVenuePopup(undefined, { keepSelected: false });
+      }
     },
+
     setGeofence(circle) {
       const source = map.getSource(GEOFENCE_SOURCE) as GeoJSONSource | undefined;
       source?.setData(
@@ -503,9 +676,14 @@ export async function createMapLibreAdapter(
     },
     destroy() {
       destroyed = true;
+      clearTimeout(hoverTimer);
+      venuePopup.remove();
+      clusterPopup.remove();
+      geofencePopup.remove();
       for (const marker of markers.values()) marker.remove();
       markers.clear();
       map.remove();
     },
+
   };
 }
