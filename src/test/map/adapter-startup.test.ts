@@ -77,13 +77,15 @@ describe("createMapLibreAdapter startup", () => {
 
   it("rejects instead of hanging when the worker never fires load", async () => {
     const promise = startAdapter();
-    const assertion = expect(promise).rejects.toThrow(/did not start/i);
+    promise.catch(() => {});
     // Let the dynamic import settle so the load timer is actually registered.
     await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(1);
     await vi.advanceTimersByTimeAsync(10_100);
-    await assertion;
+    await expect(promise).rejects.toThrow(/did not start/i);
 
     expect(FakeMap.instances[0].removed).toBe(true);
+
   });
 
   it("rejects on a fatal pre-load error", async () => {
