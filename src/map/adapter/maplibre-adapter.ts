@@ -628,8 +628,13 @@ export async function createMapLibreAdapter(
           geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
         })),
       });
+      // Pin elements close over their venue for the tooltip, so stale markers
+      // are dropped rather than repositioned when the data changes.
+      for (const marker of markers.values()) marker.remove();
+      markers.clear();
       syncMarkers();
     },
+
     setSelectedVenue(id) {
       // MAP-31x — feature state, not a source swap.
       if (selectedId) {
