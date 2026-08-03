@@ -641,7 +641,16 @@ export async function createMapLibreAdapter(
         if (el.dataset.venueId === id) el.dataset.selected = "true";
         else delete el.dataset.selected;
       }
+
+      selectedPopupDismissed = false;
+      if (id) {
+        const selected = venues.find((v) => v.id === id);
+        if (selected) showVenuePopup(selected);
+      } else {
+        hideVenuePopup(undefined, { keepSelected: false });
+      }
     },
+
     setGeofence(circle) {
       const source = map.getSource(GEOFENCE_SOURCE) as GeoJSONSource | undefined;
       source?.setData(
