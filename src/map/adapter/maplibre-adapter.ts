@@ -482,7 +482,8 @@ export async function createMapLibreAdapter(
     const closeCluster = () => {
       clusterExpanded = false;
       el.setAttribute("aria-expanded", "false");
-      clusterPopup.remove();
+      clusterExpanded = false;
+    clusterPopup.remove();
     };
 
     const zoomIn = () => {
@@ -645,7 +646,7 @@ export async function createMapLibreAdapter(
       }
 
       const el = isCluster
-        ? makeCluster(group.venues.length, coords)
+        ? makeCluster(group.venues, coords)
         : makePin(group.venues[0]);
       if (!isCluster && group.venues[0].id === selectedId) el.dataset.selected = "true";
       markers.set(key, new Marker({ element: el }).setLngLat(coords).addTo(map));
@@ -678,6 +679,7 @@ export async function createMapLibreAdapter(
     // A tap on open map dismisses the tooltip and clears the selection.
     selectedPopupDismissed = true;
     hideVenuePopup(undefined, { keepSelected: false });
+    clusterExpanded = false;
     clusterPopup.remove();
     emit("selectVenue", null);
   });
@@ -782,7 +784,8 @@ export async function createMapLibreAdapter(
       destroyed = true;
       clearTimeout(hoverTimer);
       venuePopup.remove();
-      clusterPopup.remove();
+      clusterExpanded = false;
+    clusterPopup.remove();
       geofencePopup.remove();
       for (const marker of markers.values()) marker.remove();
       markers.clear();
