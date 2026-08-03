@@ -256,6 +256,9 @@ export async function createMapLibreAdapter(
   });
 
   const showGeofencePopup = (lngLat: LngLatLike, props: Record<string, unknown>) => {
+    // Never two tooltips at once.
+    hideVenuePopup(undefined, { keepSelected: false });
+
     const label = String(props.label || "Your home area");
     const description = String(
       props.description || "A blurred circle around your neighbourhood — never your exact address.",
