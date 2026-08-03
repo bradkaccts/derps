@@ -128,10 +128,60 @@ export async function createMapLibreAdapter(
     }
   };
 
-  await new Promise<void>((resolve) => {
-    if (map.loaded()) resolve();
-    else map.once("load", () => resolve());
+  /* ---------------------------------------------------------------- *
+   * Startup (MAP-511) — a map that never loads must fail loudly.
+   *
+   * A dead web worker (bad dev pre-bundling, blocked blob: URL, CSP) means
+   * `load` simply never fires. Without a deadline the caller awaits forever
+   * and the UI shows a permanent spinner instead of the list fallback. So the
+   * load is raced against a timeout and against fatal (non-source) errors.
+   * Source-level errors — a tile 404, a flaky basemap — are reported but are
+   * never fatal: the map is still usable without a backdrop.
+   * ---------------------------------------------------------------- */
+  const LOAD_TIMEOUT_MS = 10_000;
+  let loadSettled = false;
+  let loadTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const startupError = (event: { error?: unknown; sourceId?: string }) =>
+    event.error instanceof Error ? event.error : new Error("Map error");
+
+  await new Promise<void>((resolve, reject) => {
+    const settle = (fn: () => void) => {
+      if (loadSettled) return;
+      loadSettled = true;
+      clearTimeout(loadTimer);
+      map.off("error", onError);
+      fn();
+    };
+
+    function onError(event: { error?: unknown; sourceId?: string }) {
+      const err = startupError(event);
+      // Tile/source failures degrade the map; they do not break it.
+      if (event.sourceId) {
+        emit("error", err);
+        return;
+      }
+      settle(() => reject(err));
+    }
+
+    map.on("error", onError);
+    loadTimer = setTimeout(() => {
+      settle(() =>
+        reject(
+          new Error(
+            `Map failed to load within ${LOAD_TIMEOUT_MS}ms — the MapLibre worker likely did not start`,
+          ),
+        ),
+      );
+    }, LOAD_TIMEOUT_MS);
+
+    if (map.loaded()) settle(resolve);
+    else map.once("load", () => settle(resolve));
+  }).catch((err) => {
+    map.remove();
+    throw err;
   });
+
   if (destroyed) {
     map.remove();
     throw new Error("Map destroyed before load completed");
@@ -140,6 +190,7 @@ export async function createMapLibreAdapter(
   map.on("error", (event) => {
     emit("error", event.error instanceof Error ? event.error : new Error("Map error"));
   });
+
 
   /* ---------------------------------------------------------------- *
    * Sources & layers (§7.1) — runtime data, never baked into the style.

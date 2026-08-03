@@ -18,10 +18,17 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // MapLibre spawns its worker from a URL relative to its own module. Pre-bundling
-  // breaks that resolution in dev, which silently kills every GeoJSON source.
+  // Dev only: MapLibre spawns its worker from a URL relative to its own module.
+  // Pre-bundling breaks that resolution in dev, which silently kills every
+  // GeoJSON source. Has no effect on the production build.
   optimizeDeps: {
     exclude: ["maplibre-gl"],
   },
+  // Build: emit worker chunks as ES modules, matching how MapLibre 6 loads its
+  // worker under Rollup. Without this, dev and prod can diverge silently.
+  worker: {
+    format: "es",
+  },
 }));
+
 

@@ -38,7 +38,10 @@ export interface DerpsMapProps {
   overlay?: React.ReactNode;
   /** Fires when cluster bubbles appear or disappear, so a legend can adapt. */
   onClustersChanged?: (hasClusters: boolean) => void;
+  /** Fires when the renderer fails to start, or errors after it is running. */
+  onError?: (error: Error) => void;
 }
+
 
 
 function prefersReducedMotion() {
@@ -60,6 +63,7 @@ export function DerpsMap({
   fallback = null,
   overlay = null,
   onClustersChanged,
+  onError,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<MapAdapter | null>(null);
@@ -67,8 +71,13 @@ export function DerpsMap({
   selectRef.current = onSelectVenue;
   const clustersRef = useRef(onClustersChanged);
   clustersRef.current = onClustersChanged;
+  const errorRef = useRef(onError);
+  errorRef.current = onError;
 
-  const [status, setStatus] = useState<"loading" | "ready" | "unsupported">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "ready" | "unsupported" | "failed"
+  >("loading");
+
 
   // Mount the renderer once. Camera/venue changes flow through imperative
   // effects below rather than a remount.
@@ -78,9 +87,18 @@ export function DerpsMap({
     if (!container) return;
 
     (async () => {
-      const { createMapLibreAdapter, isWebglSupported } = await import(
-        "./adapter/maplibre-adapter"
-      );
+      let importedAdapter: typeof import("./adapter/maplibre-adapter");
+      try {
+        importedAdapter = await import("./adapter/maplibre-adapter");
+      } catch (err) {
+        // A failed chunk/worker fetch must not leave a spinner on screen.
+        if (!cancelled) {
+          errorRef.current?.(err instanceof Error ? err : new Error("Map bundle failed to load"));
+          setStatus("failed");
+        }
+        return;
+      }
+      const { createMapLibreAdapter, isWebglSupported } = importedAdapter;
       if (cancelled) return;
       if (!isWebglSupported()) {
         setStatus("unsupported");
@@ -102,11 +120,16 @@ export function DerpsMap({
         adapterRef.current = adapter;
         adapter.on("selectVenue", (id) => selectRef.current?.(id));
         adapter.on("clustersChanged", (has) => clustersRef.current?.(has));
+        adapter.on("error", (err) => errorRef.current?.(err));
         setStatus("ready");
-      } catch {
-        if (!cancelled) setStatus("unsupported");
+      } catch (err) {
+        if (!cancelled) {
+          errorRef.current?.(err instanceof Error ? err : new Error("Map failed to start"));
+          setStatus("failed");
+        }
       }
     })();
+
 
     return () => {
       cancelled = true;
@@ -146,9 +169,12 @@ export function DerpsMap({
     "--derps-map-surface": palette.background,
   } as React.CSSProperties;
 
-  if (status === "unsupported") {
+  // Unsupported (no WebGL) and failed (worker/bundle/startup) both fall back to
+  // the list, which is an equivalent view — never a blank canvas or a spinner.
+  if (status === "unsupported" || status === "failed") {
     return <>{fallback}</>;
   }
+
 
   return (
     <div className={className} style={cssVars}>
