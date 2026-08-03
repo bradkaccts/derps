@@ -40,6 +40,11 @@ export interface DerpsMapProps {
   onClustersChanged?: (hasClusters: boolean) => void;
   /** Fires after the camera settles, so callers can offer an area re-search. */
   onCameraChange?: (camera: Camera) => void;
+  /**
+   * Bump to re-issue the current `camera` as an animated recentre and close any
+   * open tooltip or cluster list — used by "Reset to my area".
+   */
+  recenterNonce?: number;
   /** Fires when the renderer fails to start, or errors after it is running. */
   onError?: (error: Error) => void;
 }
@@ -66,6 +71,7 @@ export function DerpsMap({
   overlay = null,
   onClustersChanged,
   onCameraChange,
+  recenterNonce = 0,
   onError,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,7 +162,14 @@ export function DerpsMap({
     if (status !== "ready") return;
     adapterRef.current?.setCamera(camera, { animate: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camera.center[0], camera.center[1], camera.zoom, status]);
+  }, [camera.center[0], camera.center[1], camera.zoom, status, recenterNonce]);
+
+  // A recentre also clears transient chrome, so the user isn't left with a
+  // tooltip or an expanded cluster from wherever they had panned to.
+  useEffect(() => {
+    if (status !== "ready" || recenterNonce === 0) return;
+    adapterRef.current?.dismissOverlays();
+  }, [recenterNonce, status]);
 
 
 
