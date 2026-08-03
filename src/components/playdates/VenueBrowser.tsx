@@ -243,14 +243,27 @@ export function VenueBrowser({
                       type="button"
                       onClick={searchThisArea}
                       disabled={searching}
+                      aria-busy={searching}
                       className="btn-bouncy pointer-events-auto flex min-h-[40px] items-center gap-2 rounded-full border border-border bg-card/95 px-4 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur disabled:opacity-70"
                     >
-                      <Search className="h-4 w-4 text-primary" aria-hidden />
+                      {searching ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />
+                      ) : (
+                        <Search className="h-4 w-4 text-primary" aria-hidden />
+                      )}
                       {searching ? "Searching…" : "Search this area"}
                     </button>
                   </div>
                 )}
-                <MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />
+                {searching && (
+                  <div className="animate-fade-in pointer-events-none absolute inset-0 z-[5] flex items-center justify-center bg-background/45 backdrop-blur-[1px]">
+                    <span className="flex items-center gap-2 rounded-full bg-card/95 px-3 py-1.5 text-xs font-bold text-muted-foreground shadow-sm">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" aria-hidden />
+                      Finding spots here…
+                    </span>
+                  </div>
+                )}
+
               </>
             }
           />
