@@ -57,7 +57,7 @@ export function VenueBrowser({
   selectedVenueId?: string;
   className?: string;
 }) {
-  const [view, setView] = useState<"list" | "map">("list");
+  const [view, setView] = useState<"list" | "map">("map");
   const [hasClusters, setHasClusters] = useState(false);
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
   const { attributeStates } = useVenueConfidence();
