@@ -74,6 +74,8 @@ export function DerpsMap({
   selectRef.current = onSelectVenue;
   const clustersRef = useRef(onClustersChanged);
   clustersRef.current = onClustersChanged;
+  const cameraChangeRef = useRef(onCameraChange);
+  cameraChangeRef.current = onCameraChange;
   const errorRef = useRef(onError);
   errorRef.current = onError;
 
