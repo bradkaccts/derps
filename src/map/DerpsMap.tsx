@@ -38,6 +38,8 @@ export interface DerpsMapProps {
   overlay?: React.ReactNode;
   /** Fires when cluster bubbles appear or disappear, so a legend can adapt. */
   onClustersChanged?: (hasClusters: boolean) => void;
+  /** Fires after the camera settles, so callers can offer an area re-search. */
+  onCameraChange?: (camera: Camera) => void;
   /** Fires when the renderer fails to start, or errors after it is running. */
   onError?: (error: Error) => void;
 }
