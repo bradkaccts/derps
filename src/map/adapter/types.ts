@@ -21,6 +21,14 @@ export interface Padding {
   left: number;
 }
 
+/** One amenity line inside a pin tooltip. Presentation only. */
+export interface MapVenueChip {
+  label: string;
+  /** Plain-language confirmation signal, e.g. "5 confirmed", "mixed reports". */
+  note?: string;
+  tone: "confirmed" | "mixed" | "plain";
+}
+
 export interface MapVenueFeature {
   id: string;
   name: string;
@@ -32,7 +40,16 @@ export interface MapVenueFeature {
   distanceBand: string;
   /** False when the venue is unsuitable for the matched pair; pin is muted. */
   selectable: boolean;
+  /** Up to three key amenities, already prioritised for the tooltip. */
+  amenityChips?: MapVenueChip[];
+  /** Hours, or the posted rules trimmed to one sentence. */
+  detailLine?: string;
+  /** Label for the tooltip's primary action; omitted outside pick-a-spot mode. */
+  actionLabel?: string;
+  /** Why this venue can't be chosen — shown instead of the action. */
+  blockedReason?: string;
 }
+
 
 export interface GeofenceCircle {
   center: [lng: number, lat: number];
