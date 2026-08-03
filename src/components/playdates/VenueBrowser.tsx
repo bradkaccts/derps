@@ -87,7 +87,15 @@ export function VenueBrowser({
     });
   }, [filters, pairTraits, onSelect, attributeStates]);
 
-  const features = useMemo(() => venueResultsToFeatures(results), [results]);
+  const features = useMemo(
+    () =>
+      venueResultsToFeatures(results, {
+        aggregatesFor: attributeStates,
+        selectable: Boolean(onSelect),
+      }),
+    [results, attributeStates, onSelect],
+  );
+
 
   const toggle = <T,>(list: T[], value: T): T[] =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
