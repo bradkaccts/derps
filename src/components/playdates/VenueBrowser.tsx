@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X, Search, LocateFixed } from "lucide-react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X, Search, LocateFixed, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
@@ -242,11 +243,24 @@ export function VenueBrowser({
                       type="button"
                       onClick={searchThisArea}
                       disabled={searching}
+                      aria-busy={searching}
                       className="btn-bouncy pointer-events-auto flex min-h-[40px] items-center gap-2 rounded-full border border-border bg-card/95 px-4 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur disabled:opacity-70"
                     >
-                      <Search className="h-4 w-4 text-primary" aria-hidden />
+                      {searching ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />
+                      ) : (
+                        <Search className="h-4 w-4 text-primary" aria-hidden />
+                      )}
                       {searching ? "Searching…" : "Search this area"}
                     </button>
+                  </div>
+                )}
+                {searching && (
+                  <div className="animate-fade-in pointer-events-none absolute inset-0 z-[5] flex items-center justify-center bg-background/45 backdrop-blur-[1px]">
+                    <span className="flex items-center gap-2 rounded-full bg-card/95 px-3 py-1.5 text-xs font-bold text-muted-foreground shadow-sm">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" aria-hidden />
+                      Finding spots here…
+                    </span>
                   </div>
                 )}
                 <MapLegend selectable={Boolean(onSelect)} hasClusters={hasClusters} />
@@ -256,24 +270,42 @@ export function VenueBrowser({
         </div>
       ) : null}
 
+      {searching ? (
+        <ul className="animate-fade-in space-y-3" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="rounded-xl border border-border p-4">
+              <Skeleton className="h-5 w-2/5" />
+              <Skeleton className="mt-2 h-3 w-3/5" />
+              <div className="mt-3 flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="animate-fade-in space-y-3">
+          {results.map(({ venue, distanceBand, recommendation }) => (
+            <li key={venue.id}>
+              <VenueRow
+                venue={venue}
+                distanceBand={distanceBand}
+                recommendation={recommendation}
+                aggregates={attributeStates(venue.id, venue.venueType)}
+                onSelect={onSelect}
+                selected={selectedVenueId === venue.id}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="sr-only" role="status" aria-live="polite">
+        {searching ? "Searching this area" : `${results.length} venues found`}
+      </p>
 
 
-      <ul className="space-y-3">
-        {results.map(({ venue, distanceBand, recommendation }) => (
-          <li key={venue.id}>
-            <VenueRow
-              venue={venue}
-              distanceBand={distanceBand}
-              recommendation={recommendation}
-              aggregates={attributeStates(venue.id, venue.venueType)}
-              onSelect={onSelect}
-              selected={selectedVenueId === venue.id}
-            />
-          </li>
-        ))}
-      </ul>
-
-      {results.length === 0 && (
+      {!searching && results.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="font-bold text-foreground">No venues match those filters</p>
           <p className="mt-1 text-sm text-muted-foreground">
