@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X, Search, LocateFixed } from "lucide-react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X, Search, LocateFixed, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
