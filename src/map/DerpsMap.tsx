@@ -63,6 +63,7 @@ export function DerpsMap({
   fallback = null,
   overlay = null,
   onClustersChanged,
+  onError,
 }: DerpsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<MapAdapter | null>(null);
@@ -70,8 +71,13 @@ export function DerpsMap({
   selectRef.current = onSelectVenue;
   const clustersRef = useRef(onClustersChanged);
   clustersRef.current = onClustersChanged;
+  const errorRef = useRef(onError);
+  errorRef.current = onError;
 
-  const [status, setStatus] = useState<"loading" | "ready" | "unsupported">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "ready" | "unsupported" | "failed"
+  >("loading");
+
 
   // Mount the renderer once. Camera/venue changes flow through imperative
   // effects below rather than a remount.
