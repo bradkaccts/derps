@@ -213,6 +213,14 @@ export function VenueBrowser({
         )}
       </p>
 
+      {movedFromHome && activeFilterCount > 0 && (
+        <p className="text-xs font-semibold text-muted-foreground">
+          Your {activeFilterCount} {activeFilterCount === 1 ? "filter is" : "filters are"} still on
+          for this area.
+        </p>
+      )}
+
+
       {view === "map" ? (
         <div ref={mapWrapRef}>
           <DerpsMap
