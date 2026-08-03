@@ -72,7 +72,7 @@
   }
 }
 
-/* Geofence tooltip — explains the blurred home-area circle (MAP-612). */
+/* Area tooltip (MAP-612). */
 .derps-map-popup .maplibregl-popup-content {
   display: flex;
   flex-direction: column;
