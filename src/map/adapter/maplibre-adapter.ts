@@ -410,10 +410,13 @@ export async function createMapLibreAdapter(
   const clusterPopup = new Popup({
     closeButton: false,
     closeOnClick: false,
-    className: "derps-map-popup",
-    maxWidth: "200px",
+    className: "derps-map-popup derps-map-cluster-popup",
+    maxWidth: "260px",
     offset: 18,
   });
+  /** Hover hint vs. the expanded list are different states of one popup. */
+  let clusterExpanded = false;
+
 
   const makePin = (venue: MapVenueFeature) => {
     const el = document.createElement("button");
