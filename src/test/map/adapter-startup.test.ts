@@ -56,8 +56,11 @@ vi.mock("maplibre-gl", () => ({
   GeoJSONSource: class {},
 }));
 
-async function startAdapter() {
-  const { createMapLibreAdapter } = await import("@/map/adapter/maplibre-adapter");
+// Imported once, before fake timers are installed, so starting an adapter in a
+// test is synchronous up to the point where the load timer is registered.
+const { createMapLibreAdapter } = await import("@/map/adapter/maplibre-adapter");
+
+function startAdapter() {
   const container = document.createElement("div");
   return createMapLibreAdapter({
     container,
@@ -65,6 +68,7 @@ async function startAdapter() {
     camera: { center: [-0.12, 51.5], zoom: 12 },
   });
 }
+
 
 describe("createMapLibreAdapter startup", () => {
   beforeEach(() => {
