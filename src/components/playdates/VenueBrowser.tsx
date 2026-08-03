@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { List, Map as MapIcon, ShieldAlert, Star, Check, Info, X, Search, LocateFixed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { mockVenues } from "@/data/mock-venues";
 import { DerpsMap } from "@/map/DerpsMap";
 import { MAP_ANCHOR, venueResultsToFeatures } from "@/map/venue-features";
+import { shouldOfferAreaSearch } from "@/lib/playdates/map-search-area";
+import { type Camera } from "@/map/adapter/types";
 import { HOME_GEO } from "@/hooks/use-playdate-feed";
 import {
   AMENITY_EMOJI,
