@@ -95,15 +95,15 @@ export function PlaydateBrowseGrid({
                 size="sm"
                 disabled={boopsRemaining === 0}
                 aria-label={`Boop ${card.name}`}
-                className="btn-bouncy min-h-[44px] flex-1 border-primary/60 font-semibold text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+                className="btn-bouncy min-h-[48px] flex-[1.3] border-primary/60 font-semibold text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
                 onClick={() => onSwipe(card, "boop")}
               >
-                <Sparkles className="h-4 w-4" aria-hidden />
+                <Sparkles className="h-5 w-5" aria-hidden />
               </Button>
               <Button
                 size="sm"
                 aria-label={`Like ${card.name}`}
-                className="btn-bouncy min-h-[44px] flex-[2] gap-1.5 font-bold"
+                className="btn-bouncy min-h-[44px] flex-1 gap-1.5 font-bold"
                 onClick={() => onSwipe(card, "like")}
               >
                 <Heart className="h-4 w-4" aria-hidden />
