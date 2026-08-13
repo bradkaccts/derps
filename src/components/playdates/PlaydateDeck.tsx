@@ -178,6 +178,22 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   const passOpacity = useTransform(x, [-90, 0], [1, 0]);
   const boopOpacity = useTransform(y, [-90, 0], [1, 0]);
 
+  // Tracks whether details content continues above/below the visible scroll area
+  // so the soft fade edges only show when there is more to read.
+  const [edges, setEdges] = useState({ top: false, bottom: false });
+  const detailsRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    setEdges({ top: false, bottom: node.scrollHeight - node.clientHeight > 4 });
+  }, []);
+  const handleDetailsScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const el = event.currentTarget;
+    setEdges({
+      top: el.scrollTop > 4,
+      bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
+    });
+  };
+
+
   const handleDragEnd = (_event: unknown, info: PanInfo) => {
     const threshold = 100;
     if (info.offset.y < -threshold && Math.abs(info.offset.y) > Math.abs(info.offset.x)) {
