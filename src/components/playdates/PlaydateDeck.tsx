@@ -203,7 +203,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   return (
     <motion.div
       className={cn(
-        "absolute inset-0 cursor-grab overflow-hidden rounded-2xl border border-border bg-card shadow-lg active:cursor-grabbing",
+        "absolute inset-0 flex cursor-grab flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg active:cursor-grabbing",
         !isTop && "pointer-events-none",
       )}
       style={{
