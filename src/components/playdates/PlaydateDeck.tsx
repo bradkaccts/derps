@@ -114,10 +114,10 @@ export function PlaydateDeck({
               : "No Boops left today"
           }
           disabled={boopsRemaining === 0}
-          className="btn-bouncy h-12 w-12 rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+          className="btn-bouncy h-16 w-16 rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
           onClick={() => resolve("boop")}
         >
-          <Sparkles className="h-6 w-6" aria-hidden />
+          <Sparkles className="h-7 w-7" aria-hidden />
         </Button>
 
         <Button
