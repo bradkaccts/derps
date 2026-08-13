@@ -304,6 +304,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
           continuing rather than being abruptly cut off. */}
       <div className="relative min-h-0 flex-1">
         <div
+          ref={detailsRef}
           onScroll={handleDetailsScroll}
           className="h-full space-y-2.5 overflow-y-auto scroll-smooth p-4"
         >
