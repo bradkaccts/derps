@@ -325,7 +325,22 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
             <span aria-hidden>⚖️</span>
             {Math.round(card.traits.sizeKg)} kg
           </Badge>
+          </div>
         </div>
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-card to-transparent transition-opacity duration-300",
+            edges.top ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card to-transparent transition-opacity duration-300",
+            edges.bottom ? "opacity-100" : "opacity-0",
+          )}
+        />
       </div>
     </motion.div>
   );
