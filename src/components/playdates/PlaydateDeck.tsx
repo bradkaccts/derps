@@ -225,7 +225,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
         className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Open ${card.name}'s profile`}
       >
-        <div className="relative h-[320px]">
+        <div className="relative h-[280px]">
           <img
             src={card.photos[0]}
             alt={`${card.name}, a ${card.breed}`}
@@ -274,7 +274,9 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
         </div>
       </button>
 
-      <div className="space-y-2.5 p-4">
+      {/* Details area can scroll if a profile has unusually long disclosures,
+          keeping every action and badge reachable without the buttons covering them. */}
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-4">
         <div>
           <h3 className="text-xl font-extrabold text-foreground">{card.name}</h3>
           <p className="text-sm text-muted-foreground">
