@@ -78,7 +78,9 @@ export function PlaydateDeck({
 
   return (
     <div className="flex flex-col items-center gap-6 pb-4">
-      <div className="relative h-[540px] w-full max-w-sm sm:h-[620px]">
+      {/* Height scales with the breakpoint so the details block never has to
+          clip; the action pill below always keeps its own row. */}
+      <div className="relative h-[566px] w-full max-w-sm sm:h-[648px]">
         {visible
           .map((card, i) => (
             <SwipeCard
@@ -225,7 +227,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
         className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Open ${card.name}'s profile`}
       >
-        <div className="relative h-[240px] sm:h-[280px]">
+        <div className="relative h-[216px] sm:h-[264px]">
           <img
             src={card.photos[0]}
             alt={`${card.name}, a ${card.breed}`}
