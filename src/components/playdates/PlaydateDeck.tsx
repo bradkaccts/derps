@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
 import { Heart, X, Sparkles, Undo2, MapPin, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -193,7 +193,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   }, []);
   useEffect(() => {
     syncEdges(detailsRef.current);
-  }, [syncEdges, card.id]);
+  }, [syncEdges, card.petId]);
   const handleDetailsScroll = (event: React.UIEvent<HTMLDivElement>) => syncEdges(event.currentTarget);
 
 
