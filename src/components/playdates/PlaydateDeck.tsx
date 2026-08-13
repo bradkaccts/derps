@@ -139,7 +139,7 @@ export function PlaydateDeck({
         >
           <Heart className="h-7 w-7" aria-hidden />
         </Button>
-      </div>
+      </motion.div>
 
       <div className="flex items-center gap-3">
         {/* SW-204 — undo of the immediately preceding swipe only. */}
