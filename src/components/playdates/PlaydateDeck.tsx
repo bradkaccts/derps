@@ -97,8 +97,14 @@ export function PlaydateDeck({
       </div>
 
       {/* Actions are placed below the card with clear vertical separation so
-          enlarged controls never encroach on the profile details above. */}
-      <div className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm">
+          enlarged controls never encroach on the profile details above. The
+          pill eases in so it reads as a settled surface, not a jump-cut. */}
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.6 }}
+        className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm"
+      >
         <Button
           variant="outline"
           size="icon"
@@ -133,7 +139,7 @@ export function PlaydateDeck({
         >
           <Heart className="h-7 w-7" aria-hidden />
         </Button>
-      </div>
+      </motion.div>
 
       <div className="flex items-center gap-3">
         {/* SW-204 — undo of the immediately preceding swipe only. */}
@@ -171,6 +177,22 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   const likeOpacity = useTransform(x, [0, 90], [0, 1]);
   const passOpacity = useTransform(x, [-90, 0], [1, 0]);
   const boopOpacity = useTransform(y, [-90, 0], [1, 0]);
+
+  // Tracks whether details content continues above/below the visible scroll area
+  // so the soft fade edges only show when there is more to read.
+  const [edges, setEdges] = useState({ top: false, bottom: false });
+  const detailsRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    setEdges({ top: false, bottom: node.scrollHeight - node.clientHeight > 4 });
+  }, []);
+  const handleDetailsScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const el = event.currentTarget;
+    setEdges({
+      top: el.scrollTop > 4,
+      bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
+    });
+  };
+
 
   const handleDragEnd = (_event: unknown, info: PanInfo) => {
     const threshold = 100;
@@ -277,8 +299,15 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
       </button>
 
       {/* Details area can scroll if a profile has unusually long disclosures,
-          keeping every action and badge reachable without the buttons covering them. */}
-      <div className="flex-1 space-y-2.5 overflow-y-auto p-4">
+          keeping every action and badge reachable without the buttons covering them.
+          Soft gradient edges fade in/out with scroll position so content reads as
+          continuing rather than being abruptly cut off. */}
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={detailsRef}
+          onScroll={handleDetailsScroll}
+          className="h-full space-y-2.5 overflow-y-auto scroll-smooth p-4"
+        >
         <div>
           <h3 className="text-xl font-extrabold text-foreground">{card.name}</h3>
           <p className="text-sm text-muted-foreground">
@@ -313,7 +342,22 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
             <span aria-hidden>⚖️</span>
             {Math.round(card.traits.sizeKg)} kg
           </Badge>
+          </div>
         </div>
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-card to-transparent transition-opacity duration-300",
+            edges.top ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card to-transparent transition-opacity duration-300",
+            edges.bottom ? "opacity-100" : "opacity-0",
+          )}
+        />
       </div>
     </motion.div>
   );
