@@ -98,10 +98,10 @@ export function PetDetailDialog({
           </Button>
           <Button
             variant="outline"
-            className="btn-bouncy min-h-[44px] flex-1 border-primary/60 font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
+            className="btn-bouncy min-h-[48px] flex-[1.15] border-primary/60 font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
             onClick={() => onSwipe(card, "boop")}
           >
-            <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
+            <Sparkles className="mr-1.5 h-5 w-5" aria-hidden />
             Boop
           </Button>
           <Button
