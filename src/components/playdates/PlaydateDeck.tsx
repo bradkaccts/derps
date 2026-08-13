@@ -249,10 +249,12 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
       <button
         type="button"
         onClick={() => onOpenProfile(card)}
-        className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="block w-full shrink-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Open ${card.name}'s profile`}
       >
-        <div className="relative h-[42%] min-h-[160px]">
+        {/* Viewport-aware height: a percentage height collapsed here because the
+            button wrapper has no resolved height, squashing the photo. */}
+        <div className="relative h-[clamp(180px,32vh,300px)] overflow-hidden">
           <img
             src={card.photos[0]}
             alt={`${card.name}, a ${card.breed}`}
