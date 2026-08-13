@@ -97,8 +97,14 @@ export function PlaydateDeck({
       </div>
 
       {/* Actions are placed below the card with clear vertical separation so
-          enlarged controls never encroach on the profile details above. */}
-      <div className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm">
+          enlarged controls never encroach on the profile details above. The
+          pill eases in so it reads as a settled surface, not a jump-cut. */}
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.6 }}
+        className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm"
+      >
         <Button
           variant="outline"
           size="icon"
