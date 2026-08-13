@@ -80,7 +80,7 @@ export function PlaydateDeck({
     <div className="flex flex-col items-center gap-6 pb-4">
       {/* Height scales with the breakpoint so the details block never has to
           clip; the action pill below always keeps its own row. */}
-      <div className="relative h-[clamp(420px,62vh,640px)] w-full max-w-sm">
+      <div className="relative h-[clamp(480px,78vh,660px)] w-full max-w-sm">
         {visible
           .map((card, i) => (
             <SwipeCard
