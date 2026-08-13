@@ -77,8 +77,8 @@ export function PlaydateDeck({
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative h-[560px] w-full max-w-sm">
+    <div className="flex flex-col items-center gap-6 pb-4">
+      <div className="relative h-[540px] w-full max-w-sm sm:h-[620px]">
         {visible
           .map((card, i) => (
             <SwipeCard
@@ -94,7 +94,9 @@ export function PlaydateDeck({
           .reverse()}
       </div>
 
-      <div className="mt-6 flex items-center gap-4">
+      {/* Actions are placed below the card with clear vertical separation so
+          enlarged controls never encroach on the profile details above. */}
+      <div className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm">
         <Button
           variant="outline"
           size="icon"
@@ -131,7 +133,7 @@ export function PlaydateDeck({
         </Button>
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {/* SW-204 — undo of the immediately preceding swipe only. */}
         <Button
           variant="ghost"
@@ -201,7 +203,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   return (
     <motion.div
       className={cn(
-        "absolute inset-0 cursor-grab overflow-hidden rounded-2xl border border-border bg-card shadow-lg active:cursor-grabbing",
+        "absolute inset-0 flex cursor-grab flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg active:cursor-grabbing",
         !isTop && "pointer-events-none",
       )}
       style={{
@@ -223,7 +225,7 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
         className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={`Open ${card.name}'s profile`}
       >
-        <div className="relative h-[320px]">
+        <div className="relative h-[240px] sm:h-[280px]">
           <img
             src={card.photos[0]}
             alt={`${card.name}, a ${card.breed}`}
@@ -272,7 +274,9 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
         </div>
       </button>
 
-      <div className="space-y-2.5 p-4">
+      {/* Details area can scroll if a profile has unusually long disclosures,
+          keeping every action and badge reachable without the buttons covering them. */}
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-4">
         <div>
           <h3 className="text-xl font-extrabold text-foreground">{card.name}</h3>
           <p className="text-sm text-muted-foreground">
