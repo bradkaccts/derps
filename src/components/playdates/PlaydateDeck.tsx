@@ -181,17 +181,20 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
   // Tracks whether details content continues above/below the visible scroll area
   // so the soft fade edges only show when there is more to read.
   const [edges, setEdges] = useState({ top: false, bottom: false });
-  const detailsRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node) return;
-    setEdges({ top: false, bottom: node.scrollHeight - node.clientHeight > 4 });
-  }, []);
-  const handleDetailsScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const el = event.currentTarget;
-    setEdges({
+  const detailsRef = useRef<HTMLDivElement | null>(null);
+  const syncEdges = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const next = {
       top: el.scrollTop > 4,
       bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
-    });
-  };
+    };
+    // Bail out when nothing changed so measuring never loops with re-renders.
+    setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next));
+  }, []);
+  useEffect(() => {
+    syncEdges(detailsRef.current);
+  }, [syncEdges, card.id]);
+  const handleDetailsScroll = (event: React.UIEvent<HTMLDivElement>) => syncEdges(event.currentTarget);
 
 
   const handleDragEnd = (_event: unknown, info: PanInfo) => {
