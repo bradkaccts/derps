@@ -77,8 +77,8 @@ export function PlaydateDeck({
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative h-[560px] w-full max-w-sm">
+    <div className="flex flex-col items-center gap-6 pb-4">
+      <div className="relative h-[620px] w-full max-w-sm">
         {visible
           .map((card, i) => (
             <SwipeCard
@@ -94,7 +94,9 @@ export function PlaydateDeck({
           .reverse()}
       </div>
 
-      <div className="mt-6 flex items-center gap-4">
+      {/* Actions are placed below the card with clear vertical separation so
+          enlarged controls never encroach on the profile details above. */}
+      <div className="flex items-center gap-5 rounded-2xl border border-border bg-card/50 p-3 shadow-sm">
         <Button
           variant="outline"
           size="icon"
@@ -131,7 +133,7 @@ export function PlaydateDeck({
         </Button>
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {/* SW-204 — undo of the immediately preceding swipe only. */}
         <Button
           variant="ghost"
