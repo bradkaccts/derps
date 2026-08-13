@@ -78,7 +78,7 @@ export function PlaydateDeck({
 
   return (
     <div className="flex flex-col items-center gap-6 pb-4">
-      <div className="relative h-[620px] w-full max-w-sm">
+      <div className="relative h-[540px] w-full max-w-sm sm:h-[620px]">
         {visible
           .map((card, i) => (
             <SwipeCard
