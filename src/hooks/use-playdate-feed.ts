@@ -89,12 +89,13 @@ export interface SwipeOutcome {
  */
 export function usePlaydateFeed() {
   const { activePet, myPets, setActivePetId } = useMyPets();
-  const { requireAuth } = useAuth();
+  const { requireAuth, user } = useAuth();
   const personality = usePetPersonality();
   const swipeStore = useSwipes();
   const matchStore = useMatches();
   const meetupStore = useMeetups();
   const safety = useSafety();
+  const { remotePool } = useRemoteDerps();
 
   const [deckVersion, setDeckVersion] = useState(0);
 
@@ -106,8 +107,9 @@ export function usePlaydateFeed() {
       personality.getPersonality(activePet.id),
       personality.getPreference(activePet.id),
       attestation,
+      user?.id,
     );
-  }, [activePet, personality]);
+  }, [activePet, personality, user?.id]);
 
   const gate: OnboardingGate = useMemo(() => {
     if (!activePet) return "no_pet";
@@ -119,7 +121,10 @@ export function usePlaydateFeed() {
     return "ready";
   }, [activePet, personality]);
 
-  const pool = useMemo<ScoredPet[]>(() => buildMockPool(), []);
+  // Real Derps first, then the demo population so a thin local area still has
+  // a deck worth swiping.
+  const pool = useMemo<ScoredPet[]>(() => [...remotePool, ...buildMockPool()], [remotePool]);
+
 
   const matchedPetIds = useMemo(() => {
     if (!activePet) return new Set<string>();
