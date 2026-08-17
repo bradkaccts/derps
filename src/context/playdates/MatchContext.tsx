@@ -263,9 +263,19 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         latestFromPartner = message;
       }
     });
-    setRemoteThreads(grouped);
+    // Keep in-flight optimistic bubbles so a poll can't drop a message mid-send.
+    setRemoteThreads((prev) => {
+      const next: Record<string, PlaydateMessage[]> = { ...grouped };
+      Object.entries(prev).forEach(([matchId, thread]) => {
+        const pending = thread.filter((m) => m.id.startsWith("msg-"));
+        if (pending.length > 0) next[matchId] = mergeThread(next[matchId] ?? [], pending);
+        else next[matchId] = mergeThread(next[matchId] ?? [], []);
+      });
+      return next;
+    });
     primed.current = true;
     if (latestFromPartner) setIncomingMessage(latestFromPartner);
+
 
   }, [userId]);
 
