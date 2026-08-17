@@ -251,8 +251,11 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   // Live delivery: a match created by the other person's boop, and their replies.
   useEffect(() => {
     if (!userId) return;
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+
     const channel = supabase
-      .channel("derpdate-matches")
+      .channel(`derpdate-matches-${userId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "matches" },
@@ -282,14 +285,41 @@ export function MatchProvider({ children }: { children: ReactNode }) {
             if (existing.some((m) => m.id === message.id)) return prev;
             return { ...prev, [message.matchId]: [...existing, message] };
           });
+          if (message.senderUserId !== userId) {
+            setIncomingMessage(message);
+          }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (cancelled) return;
+        if (status === "SUBSCRIBED") {
+          // Catch anything the partner sent while the socket was down.
+          void refreshRemoteMatches();
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          retry = setTimeout(() => {
+            if (!cancelled) void refreshRemoteMatches();
+          }, 4000);
+        }
+      });
+
+    // Sockets die when a phone sleeps or a tab is backgrounded; re-pull on return.
+    const resync = () => {
+      if (document.visibilityState === "visible") void refreshRemoteMatches();
+    };
+    document.addEventListener("visibilitychange", resync);
+    window.addEventListener("online", resync);
 
     return () => {
+      cancelled = true;
+      if (retry) clearTimeout(retry);
+      document.removeEventListener("visibilitychange", resync);
+      window.removeEventListener("online", resync);
       void supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, refreshRemoteMatches]);
+
 
   const matches = useMemo(() => {
     const seen = new Set(remoteMatches.map((m) => m.id));
