@@ -307,15 +307,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           const message = rowToMessage(payload.new as MessageRow);
           if (seenMessageIds.current.has(message.id)) return;
           seenMessageIds.current.add(message.id);
-          setRemoteThreads((prev) => {
-            const existing = prev[message.matchId] ?? [];
-            if (existing.some((m) => m.id === message.id)) return prev;
-            return { ...prev, [message.matchId]: [...existing, message] };
-          });
-          if (message.senderUserId !== userId) {
+          const mine = message.senderUserId === userId;
+          setRemoteThreads((prev) => ({
+            ...prev,
+            [message.matchId]: mergeThread(prev[message.matchId] ?? [], [message]),
+          }));
+          if (!mine) {
             setIncomingMessage(message);
           }
         },
+
       )
       .subscribe((status) => {
         if (cancelled) return;
