@@ -114,6 +114,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadProfile(user.id);
   }, [user, loadProfile]);
 
+  const updateProfile = useCallback(
+    async (patch: Partial<Pick<DerpsProfile, "display_name" | "location">>) => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(patch)
+        .eq("id", user.id)
+        .select("id, display_name, avatar_url, location, verification_tier, trust_score")
+        .maybeSingle();
+      if (error) throw error;
+      if (data) setProfile(data as DerpsProfile);
+    },
+    [user],
+  );
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setSession(null);
