@@ -77,6 +77,22 @@ const PlaydatesFeed = () => {
     [swipe],
   );
 
+  /* A match made by the other person's swipe arrives over realtime, so the
+     celebration is triggered by the match landing, not by our own swipe. */
+  const incomingPartnerId =
+    newRemoteMatch && activePet ? partnerPetId(newRemoteMatch, activePet.id) : undefined;
+  const incomingPartner = usePlaydatePartner(incomingPartnerId);
+
+  useEffect(() => {
+    if (!newRemoteMatch) return;
+    setMatchCelebration({
+      partnerName: incomingPartner?.name ?? "your new pal",
+      partnerPhoto: incomingPartner?.photos[0],
+      matchId: newRemoteMatch.id,
+    });
+    clearNewRemoteMatch();
+  }, [newRemoteMatch, incomingPartner, clearNewRemoteMatch]);
+
 
   /* ---------------- Onboarding gates (Stage A, §4.1) ---------------- */
 
