@@ -437,6 +437,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      incoming_boops: {
+        Args: { _pet_id: string }
+        Returns: {
+          actor_pet_id: string
+          created_at: string
+          direction: string
+        }[]
+      }
       is_match_participant: {
         Args: { _match_id: string; _user_id: string }
         Returns: boolean
