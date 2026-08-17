@@ -182,6 +182,10 @@ interface MatchContextValue {
   /** A real match that just landed from the other side, for the celebration. */
   newRemoteMatch: Match | null;
   clearNewRemoteMatch: () => void;
+  /** The latest message delivered from the other person, for notifications. */
+  incomingMessage: PlaydateMessage | null;
+  clearIncomingMessage: () => void;
+
   refreshRemoteMatches: () => Promise<void>;
 }
 
