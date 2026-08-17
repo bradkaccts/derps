@@ -36,6 +36,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Display name captured on the sign-up screen, applied on first sign-in. */
+export const PENDING_NAME_KEY = "derps.pendingDisplayName";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
