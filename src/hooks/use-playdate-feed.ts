@@ -237,7 +237,7 @@ export function usePlaydateFeed() {
 
   const undo = useCallback(() => {
     if (!actor) return null;
-    if (!actor) return null;
+
     const undone = swipeStore.undoLastSwipe(actor.pet.id);
     // An undo has to reach the other side too, or the swipe still counts there.
     if (undone && isRealPetId(undone.targetPetId) && isRealPetId(actor.pet.id)) {
@@ -274,5 +274,10 @@ export function usePlaydateFeed() {
 
 /** Look up a pet from the social population, for chat and meetup surfaces. */
 export function usePlaydatePartner(petId: string | undefined): PlaydatePet | undefined {
-  return useMemo(() => mockPlaydatePets.find((p) => p.id === petId), [petId]);
+  const { findRemotePet } = useRemoteDerps();
+  return useMemo(
+    () => findRemotePet(petId) ?? mockPlaydatePets.find((p) => p.id === petId),
+    [petId, findRemotePet],
+  );
+
 }
