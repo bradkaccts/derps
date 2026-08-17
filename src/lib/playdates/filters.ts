@@ -157,7 +157,7 @@ export const HARD_FILTER_LABELS: Record<string, string> = {
   species: "Different species and cross-species matching is off",
   size_limit: "Outside a declared size limit",
   life_stage_limit: "Outside a declared age limit",
-  vaccination: "Vaccination attestation missing or expired",
+  vaccination: "Vaccination attestation expired",
   puppy_protection: "Under 16 weeks old",
   mutual_resource_guarding: "Both pets guard the same resource",
   guarding_trigger_excluded: "Guarding trigger excluded by a hard filter",
