@@ -133,6 +133,27 @@ export function usePlaydateFeed() {
   const pool = useMemo<ScoredPet[]>(() => [...remotePool, ...buildMockPool()], [remotePool]);
 
 
+  /* Who already booped this Derp, from real accounts. Read through a
+     security-definer lookup so nobody can see swipes aimed at someone else. */
+  const [realBoopedBy, setRealBoopedBy] = useState<string[]>([]);
+  const actorPetId = actor?.pet.id ?? null;
+  useEffect(() => {
+    if (!actorPetId || !isRealPetId(actorPetId) || !user) {
+      setRealBoopedBy([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .rpc("incoming_boops", { _pet_id: actorPetId })
+        .returns<{ actor_pet_id: string }[]>();
+      if (!cancelled) setRealBoopedBy((data ?? []).map((row) => row.actor_pet_id));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [actorPetId, user, deckVersion]);
+
   const matchedPetIds = useMemo(() => {
     if (!activePet) return new Set<string>();
     return new Set(
@@ -152,12 +173,22 @@ export function usePlaydateFeed() {
       blocks: safety.blocks,
       matchedPetIds,
       impressionCounts: swipeStore.impressionCounts,
-      boopedBy: swipeStore.boopedBy(actor.pet.id),
+      boopedBy: new Set([...swipeStore.boopedBy(actor.pet.id), ...realBoopedBy]),
     });
     // `impressionCounts` intentionally excluded: it changes as a *result* of
     // serving the deck, and including it would rebuild the deck on every serve.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actor, gate, pool, swipeStore.swipes, safety.blocks, matchedPetIds, deckVersion]);
+  }, [
+    actor,
+    gate,
+    pool,
+    swipeStore.swipes,
+    safety.blocks,
+    matchedPetIds,
+    realBoopedBy,
+    deckVersion,
+  ]);
+
 
   const deck: Deck | null = result?.deck ?? null;
 
