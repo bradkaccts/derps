@@ -21,6 +21,7 @@ import {
   useSwipes,
 } from "@/context/playdates/PlaydatesProvider";
 import { isRealPetId } from "@/lib/playdates/remote-pets";
+import { fireAndForget } from "@/lib/supabase-fire";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUser } from "@/data/mock-users";
 
@@ -233,7 +234,8 @@ export function usePlaydateFeed() {
        * so nothing is faked and no celebration fires early.
        */
       if (isRealPetId(card.petId) && isRealPetId(actor.pet.id) && user) {
-        void supabase.from("swipes").upsert(
+        fireAndForget(
+          supabase.from("swipes").upsert(
           {
             actor_user_id: user.id,
             actor_pet_id: actor.pet.id,
@@ -241,7 +243,9 @@ export function usePlaydateFeed() {
             direction,
             score_at_impression: Math.round(card.score ?? 0),
           },
-          { onConflict: "actor_pet_id,target_pet_id" },
+            { onConflict: "actor_pet_id,target_pet_id" },
+          ),
+          "record swipe",
         );
         return { matched: false, matchId: null, limitReached: false, sentToRealDerp: true };
       }
@@ -272,11 +276,14 @@ export function usePlaydateFeed() {
     const undone = swipeStore.undoLastSwipe(actor.pet.id);
     // An undo has to reach the other side too, or the swipe still counts there.
     if (undone && isRealPetId(undone.targetPetId) && isRealPetId(actor.pet.id)) {
-      void supabase
-        .from("swipes")
-        .delete()
-        .eq("actor_pet_id", actor.pet.id)
-        .eq("target_pet_id", undone.targetPetId);
+      fireAndForget(
+        supabase
+          .from("swipes")
+          .delete()
+          .eq("actor_pet_id", actor.pet.id)
+          .eq("target_pet_id", undone.targetPetId),
+        "undo swipe",
+      );
     }
     setDeckVersion((v) => v + 1);
     return undone;

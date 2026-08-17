@@ -11,6 +11,7 @@ import { LAUNCH_METRO } from "@/lib/playdates/remote-pets";
 
 
 import { supabase } from "@/integrations/supabase/client";
+import { fireAndForget } from "@/lib/supabase-fire";
 import { useAuth } from "@/context/AuthContext";
 
 
@@ -224,7 +225,11 @@ export function MyPetsProvider({ children }: { children: ReactNode }) {
   const removeMyPet = useCallback(
     (id: string) => {
       setMyPets((prev) => prev.filter((p) => p.id !== id));
-      if (userId) void supabase.from("pets").delete().eq("id", id).eq("user_id", userId);
+      if (userId)
+        fireAndForget(
+          supabase.from("pets").delete().eq("id", id).eq("user_id", userId),
+          "delete pet",
+        );
     },
     [userId],
   );
