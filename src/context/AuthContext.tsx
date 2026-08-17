@@ -72,7 +72,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("id, display_name, avatar_url, location, verification_tier, trust_score")
       .eq("id", userId)
       .maybeSingle();
-    setProfile((data as DerpsProfile) ?? null);
+
+    let next = (data as DerpsProfile) ?? null;
+
+    // Apply the name typed on the sign-up screen, once.
+    let pendingName: string | null = null;
+    try {
+      pendingName = localStorage.getItem(PENDING_NAME_KEY);
+    } catch {
+      pendingName = null;
+    }
+    if (pendingName) {
+      try {
+        localStorage.removeItem(PENDING_NAME_KEY);
+      } catch {
+        /* ignore */
+      }
+      if (next && !next.display_name) {
+        const { data: updated } = await supabase
+          .from("profiles")
+          .update({ display_name: pendingName })
+          .eq("id", userId)
+          .select("id, display_name, avatar_url, location, verification_tier, trust_score")
+          .maybeSingle();
+        if (updated) next = updated as DerpsProfile;
+      }
+    }
+
+    setProfile(next);
   }, []);
 
   useEffect(() => {
