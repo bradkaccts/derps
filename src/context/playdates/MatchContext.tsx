@@ -615,6 +615,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   );
 
   const clearNewRemoteMatch = useCallback(() => setNewRemoteMatch(null), []);
+  const clearIncomingMessage = useCallback(() => setIncomingMessage(null), []);
 
   const value = useMemo(
     () => ({
@@ -634,6 +635,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       scanDraft: scanMessage,
       newRemoteMatch,
       clearNewRemoteMatch,
+      incomingMessage,
+      clearIncomingMessage,
       refreshRemoteMatches,
     }),
     [
@@ -652,6 +655,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       awaitingReplyCount,
       newRemoteMatch,
       clearNewRemoteMatch,
+      incomingMessage,
+      clearIncomingMessage,
       refreshRemoteMatches,
     ],
   );
