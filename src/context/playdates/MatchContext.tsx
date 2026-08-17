@@ -209,6 +209,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const [newRemoteMatch, setNewRemoteMatch] = useState<Match | null>(null);
   const [incomingMessage, setIncomingMessage] = useState<PlaydateMessage | null>(null);
 
+  /** Message ids already delivered to this session, so a re-pull isn't "new". */
+  const seenMessageIds = useRef<Set<string>>(new Set());
+  const primed = useRef(false);
 
   /* ---------------- Real matches and threads ---------------- */
 
@@ -216,6 +219,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     if (!userId) {
       setRemoteMatches([]);
       setRemoteThreads({});
+      seenMessageIds.current = new Set();
+      primed.current = false;
       return;
     }
     const { data } = await supabase
@@ -233,6 +238,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
     if (rows.length === 0) {
       setRemoteThreads({});
+      primed.current = true;
       return;
     }
     const { data: messages } = await supabase
@@ -246,10 +252,20 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       .returns<MessageRow[]>();
 
     const grouped: Record<string, PlaydateMessage[]> = {};
+    let latestFromPartner: PlaydateMessage | null = null;
     (messages ?? []).forEach((row) => {
-      (grouped[row.match_id] ??= []).push(rowToMessage(row));
+      const message = rowToMessage(row);
+      (grouped[row.match_id] ??= []).push(message);
+      const isNew = !seenMessageIds.current.has(message.id);
+      seenMessageIds.current.add(message.id);
+      if (isNew && primed.current && message.senderUserId !== userId) {
+        latestFromPartner = message;
+      }
     });
     setRemoteThreads(grouped);
+    primed.current = true;
+    if (latestFromPartner) setIncomingMessage(latestFromPartner);
+
   }, [userId]);
 
   useEffect(() => {
