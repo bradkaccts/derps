@@ -162,6 +162,22 @@ function rowToMessage(row: MessageRow): PlaydateMessage {
   };
 }
 
+/**
+ * A thread reads as a conversation only if it's in send order. Server rows and
+ * optimistic bubbles arrive out of order, so merge by id and sort by sent time.
+ */
+function mergeThread(
+  existing: PlaydateMessage[],
+  incoming: PlaydateMessage[],
+): PlaydateMessage[] {
+  const byId = new Map<string, PlaydateMessage>();
+  [...existing, ...incoming].forEach((m) => byId.set(m.id, m));
+  return [...byId.values()].sort((a, b) => {
+    const delta = new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime();
+    return delta !== 0 ? delta : a.id.localeCompare(b.id);
+  });
+}
+
 interface MatchContextValue {
   matches: Match[];
   getMatch: (matchId: string) => Match | undefined;
@@ -263,9 +279,19 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         latestFromPartner = message;
       }
     });
-    setRemoteThreads(grouped);
+    // Keep in-flight optimistic bubbles so a poll can't drop a message mid-send.
+    setRemoteThreads((prev) => {
+      const next: Record<string, PlaydateMessage[]> = { ...grouped };
+      Object.entries(prev).forEach(([matchId, thread]) => {
+        const pending = thread.filter((m) => m.id.startsWith("msg-"));
+        if (pending.length > 0) next[matchId] = mergeThread(next[matchId] ?? [], pending);
+        else next[matchId] = mergeThread(next[matchId] ?? [], []);
+      });
+      return next;
+    });
     primed.current = true;
     if (latestFromPartner) setIncomingMessage(latestFromPartner);
+
 
   }, [userId]);
 
@@ -307,15 +333,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           const message = rowToMessage(payload.new as MessageRow);
           if (seenMessageIds.current.has(message.id)) return;
           seenMessageIds.current.add(message.id);
-          setRemoteThreads((prev) => {
-            const existing = prev[message.matchId] ?? [];
-            if (existing.some((m) => m.id === message.id)) return prev;
-            return { ...prev, [message.matchId]: [...existing, message] };
-          });
-          if (message.senderUserId !== userId) {
+          const mine = message.senderUserId === userId;
+          setRemoteThreads((prev) => ({
+            ...prev,
+            [message.matchId]: mergeThread(prev[message.matchId] ?? [], [message]),
+          }));
+          if (!mine) {
             setIncomingMessage(message);
           }
         },
+
       )
       .subscribe((status) => {
         if (cancelled) return;
@@ -472,8 +499,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         // by id once the insert returns.
         setRemoteThreads((prev) => ({
           ...prev,
-          [matchId]: [...(prev[matchId] ?? []), message],
+          [matchId]: mergeThread(prev[matchId] ?? [], [message]),
         }));
+
         void (async () => {
           const { data, error } = await supabase
             .from("match_messages")
@@ -495,10 +523,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
             return;
           }
           const saved = rowToMessage(data);
+          // Mine: never let a later re-pull mistake my own row for an arrival.
+          seenMessageIds.current.add(saved.id);
           setRemoteThreads((prev) => ({
             ...prev,
-            [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+            [matchId]: mergeThread(
+              (prev[matchId] ?? []).filter((m) => m.id !== message.id),
+              [saved],
+            ),
           }));
+
           if (isFirst) {
 
             await supabase
