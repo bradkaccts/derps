@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HeartHandshake, Layers, LayoutGrid, Sparkles, Syringe, MapPin, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { PlaydateDeck } from "@/components/playdates/PlaydateDeck";
 import { PlaydateBrowseGrid } from "@/components/playdates/PlaydateBrowseGrid";
 import { GotchaMoment } from "@/components/playdates/GotchaMoment";
 import { PetDetailDialog } from "@/components/playdates/PetDetailDialog";
-import { usePlaydateFeed } from "@/hooks/use-playdate-feed";
-import { usePetPersonality } from "@/context/playdates/PlaydatesProvider";
+import { usePlaydateFeed, usePlaydatePartner } from "@/hooks/use-playdate-feed";
+import { usePetPersonality, useMatches } from "@/context/playdates/PlaydatesProvider";
+
 import { cn } from "@/lib/utils";
 import { type FeedCard, type SwipeDirection } from "@/lib/playdates/types";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ type ViewMode = "swipe" | "browse";
 const PlaydatesFeed = () => {
   const navigate = useNavigate();
   const { attestVaccination } = usePetPersonality();
+  const { newRemoteMatch, clearNewRemoteMatch, partnerPetId } = useMatches();
+
   const {
     activePet,
     gate,
@@ -62,10 +65,37 @@ const PlaydatesFeed = () => {
         return;
       }
 
+      // A real Derp's human has to answer before it's a match.
+      if (outcome.sentToRealDerp) {
+        toast.success(
+          direction === "boop"
+            ? `Boop sent to ${card.name} ✨ We'll ping you if they boop back.`
+            : `Heart sent to ${card.name} 💛 We'll ping you if it's mutual.`,
+        );
+        return;
+      }
+
       if (direction === "boop") toast.success(`Boop sent to ${card.name} ✨`);
     },
     [swipe],
   );
+
+  /* A match made by the other person's swipe arrives over realtime, so the
+     celebration is triggered by the match landing, not by our own swipe. */
+  const incomingPartnerId =
+    newRemoteMatch && activePet ? partnerPetId(newRemoteMatch, activePet.id) : undefined;
+  const incomingPartner = usePlaydatePartner(incomingPartnerId);
+
+  useEffect(() => {
+    if (!newRemoteMatch) return;
+    setMatchCelebration({
+      partnerName: incomingPartner?.name ?? "your new pal",
+      partnerPhoto: incomingPartner?.photos[0],
+      matchId: newRemoteMatch.id,
+    });
+    clearNewRemoteMatch();
+  }, [newRemoteMatch, incomingPartner, clearNewRemoteMatch]);
+
 
   /* ---------------- Onboarding gates (Stage A, §4.1) ---------------- */
 

@@ -7,12 +7,21 @@ import {
   type ReactNode,
 } from "react";
 import { type Pet, type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
+import { LAUNCH_METRO } from "@/lib/playdates/remote-pets";
+
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
+
 export interface MyPet extends Pet {
   isOwned: true;
+  /** Discovery coordinates — null until the owner sets their Derpdate area. */
+  latitude?: number | null;
+  longitude?: number | null;
+  isDiscoverable?: boolean;
 }
+
 
 // Guest demo Derp — signed-out visitors still get the full Derpdate experience.
 const guestPet: MyPet = {
@@ -55,7 +64,11 @@ type PetRow = {
   photos: string[];
   health_verified: boolean;
   created_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  is_discoverable: boolean;
 };
+
 
 type NewPet = Omit<
   MyPet,
@@ -84,6 +97,9 @@ function rowToPet(row: PetRow): MyPet {
     rehomerId: row.user_id,
     createdAt: row.created_at.slice(0, 10),
     isOwned: true,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    isDiscoverable: row.is_discoverable,
   };
 }
 
@@ -102,6 +118,8 @@ function petToRow(pet: NewPet, userId: string) {
     location: pet.location ?? "",
     photos: pet.photos ?? [],
     health_verified: pet.healthVerified ?? false,
+    latitude: pet.latitude ?? LAUNCH_METRO.lat,
+    longitude: pet.longitude ?? LAUNCH_METRO.lng,
   };
 }
 
@@ -111,8 +129,14 @@ interface MyPetsContextValue {
   setActivePetId: (id: string) => void;
   addMyPet: (pet: NewPet) => void;
   removeMyPet: (id: string) => void;
+  /** Sets where this Derp is discoverable from, and whether it shows at all. */
+  updatePetDiscovery: (
+    id: string,
+    patch: { latitude?: number; longitude?: number; isDiscoverable?: boolean },
+  ) => Promise<void>;
   loadingPets: boolean;
 }
+
 
 const MyPetsContext = stableContext<MyPetsContextValue>("MyPetsContext");
 
@@ -205,10 +229,52 @@ export function MyPetsProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  const updatePetDiscovery = useCallback(
+    async (
+      id: string,
+      patch: { latitude?: number; longitude?: number; isDiscoverable?: boolean },
+    ) => {
+      setMyPets((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                latitude: patch.latitude ?? p.latitude,
+                longitude: patch.longitude ?? p.longitude,
+                isDiscoverable: patch.isDiscoverable ?? p.isDiscoverable,
+              }
+            : p,
+        ),
+      );
+      if (!userId) return;
+      const row: {
+        latitude?: number;
+        longitude?: number;
+        is_discoverable?: boolean;
+      } = {};
+      if (patch.latitude !== undefined) row.latitude = patch.latitude;
+      if (patch.longitude !== undefined) row.longitude = patch.longitude;
+      if (patch.isDiscoverable !== undefined) row.is_discoverable = patch.isDiscoverable;
+      if (Object.keys(row).length === 0) return;
+      await supabase.from("pets").update(row).eq("id", id).eq("user_id", userId);
+
+    },
+    [userId],
+  );
+
   return (
     <MyPetsContext.Provider
-      value={{ myPets, activePet, setActivePetId, addMyPet, removeMyPet, loadingPets }}
+      value={{
+        myPets,
+        activePet,
+        setActivePetId,
+        addMyPet,
+        removeMyPet,
+        updatePetDiscovery,
+        loadingPets,
+      }}
     >
+
       {children}
     </MyPetsContext.Provider>
   );

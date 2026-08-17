@@ -16,10 +16,14 @@ import {
   useMatches,
   useMeetups,
   usePetPersonality,
+  useRemoteDerps,
   useSafety,
   useSwipes,
 } from "@/context/playdates/PlaydatesProvider";
+import { isRealPetId } from "@/lib/playdates/remote-pets";
+import { supabase } from "@/integrations/supabase/client";
 import { currentUser } from "@/data/mock-users";
+
 
 /** The launch metro (§13.8). The user's own pets are anchored here. */
 export const HOME_GEO = { lat: 34.2746, lng: -119.229 };
@@ -34,18 +38,22 @@ export function toScoredPet(
   personality: PetPersonality | undefined,
   preference: PetPreference,
   vaccination: PlaydatePet["vaccination"],
+  ownerId?: string,
 ): ScoredPet | null {
   if (!personality) return null;
   return {
     pet: {
       ...pet,
-      ownerId: currentUser.id,
+      ownerId: ownerId ?? currentUser.id,
       socialStatus: "Active",
       isPlaydateActive: true,
       vaccination,
       intact: false,
       ageWeeks: 200,
-      homeGeo: HOME_GEO,
+      homeGeo: {
+        lat: pet.latitude ?? HOME_GEO.lat,
+        lng: pet.longitude ?? HOME_GEO.lng,
+      },
       lastActiveAt: new Date().toISOString(),
       historicalRightSwipeRate: 0.3,
       ownerResponsiveness: 0.9,
@@ -55,6 +63,7 @@ export function toScoredPet(
     preference,
   };
 }
+
 
 /** Deterministic pseudo-random in [0,1) — the same pair always resolves the same way. */
 function pairRoll(a: string, b: string): number {
@@ -73,7 +82,10 @@ export interface SwipeOutcome {
   matched: boolean;
   matchId: string | null;
   limitReached: boolean;
+  /** The heart/boop reached a real account; a match waits on their answer. */
+  sentToRealDerp?: boolean;
 }
+
 
 /**
  * Orchestrates the Playdates stores into a working deck.
@@ -84,12 +96,13 @@ export interface SwipeOutcome {
  */
 export function usePlaydateFeed() {
   const { activePet, myPets, setActivePetId } = useMyPets();
-  const { requireAuth } = useAuth();
+  const { requireAuth, user } = useAuth();
   const personality = usePetPersonality();
   const swipeStore = useSwipes();
   const matchStore = useMatches();
   const meetupStore = useMeetups();
   const safety = useSafety();
+  const { remotePool } = useRemoteDerps();
 
   const [deckVersion, setDeckVersion] = useState(0);
 
@@ -101,8 +114,9 @@ export function usePlaydateFeed() {
       personality.getPersonality(activePet.id),
       personality.getPreference(activePet.id),
       attestation,
+      user?.id,
     );
-  }, [activePet, personality]);
+  }, [activePet, personality, user?.id]);
 
   const gate: OnboardingGate = useMemo(() => {
     if (!activePet) return "no_pet";
@@ -114,7 +128,31 @@ export function usePlaydateFeed() {
     return "ready";
   }, [activePet, personality]);
 
-  const pool = useMemo<ScoredPet[]>(() => buildMockPool(), []);
+  // Real Derps first, then the demo population so a thin local area still has
+  // a deck worth swiping.
+  const pool = useMemo<ScoredPet[]>(() => [...remotePool, ...buildMockPool()], [remotePool]);
+
+
+  /* Who already booped this Derp, from real accounts. Read through a
+     security-definer lookup so nobody can see swipes aimed at someone else. */
+  const [realBoopedBy, setRealBoopedBy] = useState<string[]>([]);
+  const actorPetId = actor?.pet.id ?? null;
+  useEffect(() => {
+    if (!actorPetId || !isRealPetId(actorPetId) || !user) {
+      setRealBoopedBy([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .rpc("incoming_boops", { _pet_id: actorPetId })
+        .returns<{ actor_pet_id: string }[]>();
+      if (!cancelled) setRealBoopedBy((data ?? []).map((row) => row.actor_pet_id));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [actorPetId, user, deckVersion]);
 
   const matchedPetIds = useMemo(() => {
     if (!activePet) return new Set<string>();
@@ -135,12 +173,22 @@ export function usePlaydateFeed() {
       blocks: safety.blocks,
       matchedPetIds,
       impressionCounts: swipeStore.impressionCounts,
-      boopedBy: swipeStore.boopedBy(actor.pet.id),
+      boopedBy: new Set([...swipeStore.boopedBy(actor.pet.id), ...realBoopedBy]),
     });
     // `impressionCounts` intentionally excluded: it changes as a *result* of
     // serving the deck, and including it would rebuild the deck on every serve.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actor, gate, pool, swipeStore.swipes, safety.blocks, matchedPetIds, deckVersion]);
+  }, [
+    actor,
+    gate,
+    pool,
+    swipeStore.swipes,
+    safety.blocks,
+    matchedPetIds,
+    realBoopedBy,
+    deckVersion,
+  ]);
+
 
   const deck: Deck | null = result?.deck ?? null;
 
@@ -180,10 +228,29 @@ export function usePlaydateFeed() {
       if (direction === "pass") return { matched: false, matchId: null, limitReached: false };
 
       /*
-       * A match requires a mutual like (CH-301). With no second live client,
-       * the counterparty's decision is modelled from the same reciprocity prior
-       * the ranker uses, resolved deterministically per pair so a pet's answer
-       * never changes between an undo and a re-swipe.
+       * A real Derp gets a real swipe row. The match is then decided by the
+       * database trigger when — and only when — the other person swipes back,
+       * so nothing is faked and no celebration fires early.
+       */
+      if (isRealPetId(card.petId) && isRealPetId(actor.pet.id) && user) {
+        void supabase.from("swipes").upsert(
+          {
+            actor_user_id: user.id,
+            actor_pet_id: actor.pet.id,
+            target_pet_id: card.petId,
+            direction,
+            score_at_impression: Math.round(card.score ?? 0),
+          },
+          { onConflict: "actor_pet_id,target_pet_id" },
+        );
+        return { matched: false, matchId: null, limitReached: false, sentToRealDerp: true };
+      }
+
+      /*
+       * Mock population only: with no second live client, the counterparty's
+       * decision is modelled from the same reciprocity prior the ranker uses,
+       * resolved deterministically per pair so a pet's answer never changes
+       * between an undo and a re-swipe.
        */
       const candidate = pool.find((p) => p.pet.id === card.petId);
       const prior = candidate?.pet.historicalRightSwipeRate ?? 0.3;
@@ -195,15 +262,26 @@ export function usePlaydateFeed() {
       const match = matchStore.createMatch(actor.pet.id, card.petId);
       return { matched: true, matchId: match.id, limitReached: false };
     },
-    [actor, pool, swipeStore, matchStore, requireAuth],
+    [actor, pool, swipeStore, matchStore, requireAuth, user],
   );
+
 
   const undo = useCallback(() => {
     if (!actor) return null;
+
     const undone = swipeStore.undoLastSwipe(actor.pet.id);
+    // An undo has to reach the other side too, or the swipe still counts there.
+    if (undone && isRealPetId(undone.targetPetId) && isRealPetId(actor.pet.id)) {
+      void supabase
+        .from("swipes")
+        .delete()
+        .eq("actor_pet_id", actor.pet.id)
+        .eq("target_pet_id", undone.targetPetId);
+    }
     setDeckVersion((v) => v + 1);
     return undone;
   }, [actor, swipeStore]);
+
 
   const refresh = useCallback(() => setDeckVersion((v) => v + 1), []);
 
@@ -227,5 +305,10 @@ export function usePlaydateFeed() {
 
 /** Look up a pet from the social population, for chat and meetup surfaces. */
 export function usePlaydatePartner(petId: string | undefined): PlaydatePet | undefined {
-  return useMemo(() => mockPlaydatePets.find((p) => p.id === petId), [petId]);
+  const { findRemotePet } = useRemoteDerps();
+  return useMemo(
+    () => findRemotePet(petId) ?? mockPlaydatePets.find((p) => p.id === petId),
+    [petId, findRemotePet],
+  );
+
 }

@@ -1,8 +1,18 @@
 import { stableContext } from "@/context/stable-context";
-import { useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { scanMessage } from "@/lib/playdates/safety-text";
+import { isRealPetId } from "@/lib/playdates/remote-pets";
 import {
   type Match,
   type MatchState,
@@ -28,6 +38,11 @@ export function orderPair(petOne: string, petTwo: string): [string, string] {
 export function matchIdFor(petOne: string, petTwo: string): string {
   const [a, b] = orderPair(petOne, petTwo);
   return `match-${a}--${b}`;
+}
+
+/** Real matches carry a database UUID; the demo population uses `match-*` ids. */
+export function isRemoteMatchId(matchId: string): boolean {
+  return isRealPetId(matchId);
 }
 
 const seededMatches: Match[] = [
@@ -95,6 +110,54 @@ interface SendOptions {
   contactWarningAcknowledged?: boolean;
 }
 
+interface MatchRow {
+  id: string;
+  pet_a_id: string;
+  pet_b_id: string;
+  user_a_id: string;
+  user_b_id: string;
+  state: string;
+  matched_at: string;
+  expires_at: string | null;
+  meetup_count: number;
+  first_message_at: string | null;
+}
+
+interface MessageRow {
+  id: string;
+  match_id: string;
+  sender_user_id: string;
+  body: string;
+  type: string;
+  sent_at: string;
+}
+
+const sel = (s: string): string => s;
+
+function rowToMatch(row: MatchRow): Match {
+  return {
+    id: row.id,
+    petAId: row.pet_a_id,
+    petBId: row.pet_b_id,
+    state: row.state as MatchState,
+    matchedAt: row.matched_at,
+    expiresAt: row.expires_at,
+    firstMessageAt: row.first_message_at,
+    meetupCount: row.meetup_count,
+  };
+}
+
+function rowToMessage(row: MessageRow): PlaydateMessage {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    senderUserId: row.sender_user_id,
+    type: row.type as MessageType,
+    body: row.body,
+    sentAt: row.sent_at,
+  };
+}
+
 interface MatchContextValue {
   matches: Match[];
   getMatch: (matchId: string) => Match | undefined;
@@ -113,12 +176,19 @@ interface MatchContextValue {
   /** Threads where the last message came from the other party. */
   awaitingReplyCount: number;
   scanDraft: typeof scanMessage;
+  /** A real match that just landed from the other side, for the celebration. */
+  newRemoteMatch: Match | null;
+  clearNewRemoteMatch: () => void;
+  refreshRemoteMatches: () => Promise<void>;
 }
 
 const MatchContext = stableContext<MatchContextValue>("MatchContext");
 
 export function MatchProvider({ children }: { children: ReactNode }) {
-  const [matches, setMatches] = usePersistentState<Match[]>(
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  const [localMatches, setMatches] = usePersistentState<Match[]>(
     "derps.playdates.matches",
     seededMatches,
   );
@@ -126,6 +196,104 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     "derps.playdates.threads",
     seededMessages,
   );
+
+  const [remoteMatches, setRemoteMatches] = useState<Match[]>([]);
+  const [remoteThreads, setRemoteThreads] = useState<Record<string, PlaydateMessage[]>>({});
+  const [newRemoteMatch, setNewRemoteMatch] = useState<Match | null>(null);
+
+  /* ---------------- Real matches and threads ---------------- */
+
+  const refreshRemoteMatches = useCallback(async () => {
+    if (!userId) {
+      setRemoteMatches([]);
+      setRemoteThreads({});
+      return;
+    }
+    const { data } = await supabase
+      .from("matches")
+      .select(
+        sel(
+          "id, pet_a_id, pet_b_id, user_a_id, user_b_id, state, matched_at, expires_at, meetup_count, first_message_at",
+        ),
+      )
+      .order("matched_at", { ascending: false })
+      .returns<MatchRow[]>();
+
+    const rows = data ?? [];
+    setRemoteMatches(rows.map(rowToMatch));
+
+    if (rows.length === 0) {
+      setRemoteThreads({});
+      return;
+    }
+    const { data: messages } = await supabase
+      .from("match_messages")
+      .select(sel("id, match_id, sender_user_id, body, type, sent_at"))
+      .in(
+        "match_id",
+        rows.map((r) => r.id),
+      )
+      .order("sent_at", { ascending: true })
+      .returns<MessageRow[]>();
+
+    const grouped: Record<string, PlaydateMessage[]> = {};
+    (messages ?? []).forEach((row) => {
+      (grouped[row.match_id] ??= []).push(rowToMessage(row));
+    });
+    setRemoteThreads(grouped);
+  }, [userId]);
+
+  useEffect(() => {
+    void refreshRemoteMatches();
+  }, [refreshRemoteMatches]);
+
+  // Live delivery: a match created by the other person's boop, and their replies.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel("derpdate-matches")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "matches" },
+        (payload) => {
+          const match = rowToMatch(payload.new as MatchRow);
+          setRemoteMatches((prev) =>
+            prev.some((m) => m.id === match.id) ? prev : [match, ...prev],
+          );
+          setNewRemoteMatch(match);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "matches" },
+        (payload) => {
+          const match = rowToMatch(payload.new as MatchRow);
+          setRemoteMatches((prev) => prev.map((m) => (m.id === match.id ? match : m)));
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "match_messages" },
+        (payload) => {
+          const message = rowToMessage(payload.new as MessageRow);
+          setRemoteThreads((prev) => {
+            const existing = prev[message.matchId] ?? [];
+            if (existing.some((m) => m.id === message.id)) return prev;
+            return { ...prev, [message.matchId]: [...existing, message] };
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const matches = useMemo(() => {
+    const seen = new Set(remoteMatches.map((m) => m.id));
+    return [...remoteMatches, ...localMatches.filter((m) => !seen.has(m.id))];
+  }, [remoteMatches, localMatches]);
 
   /* CH-307 — sweep expired matches. Running this on mount keeps the inbox
      honest without a scheduler: a match nobody spoke in is not a relationship. */
@@ -176,7 +344,11 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const getThread = useCallback((matchId: string) => threads[matchId] ?? [], [threads]);
+  const getThread = useCallback(
+    (matchId: string) =>
+      isRemoteMatchId(matchId) ? (remoteThreads[matchId] ?? []) : (threads[matchId] ?? []),
+    [threads, remoteThreads],
+  );
 
   const createMatch = useCallback(
     (myPetId: string, otherPetId: string) => {
@@ -212,10 +384,13 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const sendMessage = useCallback(
     (matchId: string, body: string, options: SendOptions = {}) => {
       const now = new Date().toISOString();
+      const remote = isRemoteMatchId(matchId);
+      const senderId = remote && userId ? userId : currentUser.id;
+
       const message: PlaydateMessage = {
         id: `msg-${Date.now()}`,
         matchId,
-        senderUserId: currentUser.id,
+        senderUserId: senderId,
         type: options.type ?? "text",
         body,
         mediaRef: options.mediaRef,
@@ -225,17 +400,56 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         contactWarningAcknowledged: options.contactWarningAcknowledged,
       };
 
-      const isFirst = (threads[matchId] ?? []).length === 0;
-      setThreads((prev) => ({ ...prev, [matchId]: [...(prev[matchId] ?? []), message] }));
+      const isFirst = getThread(matchId).length === 0;
 
-      // A message cancels expiry: the match is now a conversation.
-      setMatches((prev) =>
-        prev.map((m) =>
-          m.id === matchId && !m.firstMessageAt
-            ? { ...m, firstMessageAt: now, expiresAt: null }
-            : m,
-        ),
-      );
+      if (remote && userId) {
+        // Optimistic: the row echoes back through realtime and replaces this one
+        // by id once the insert returns.
+        setRemoteThreads((prev) => ({
+          ...prev,
+          [matchId]: [...(prev[matchId] ?? []), message],
+        }));
+        void (async () => {
+          const { data } = await supabase
+            .from("match_messages")
+            .insert({
+              match_id: matchId,
+              sender_user_id: userId,
+              body,
+              type: options.type ?? "text",
+            })
+            .select(sel("id, match_id, sender_user_id, body, type, sent_at"))
+            .maybeSingle<MessageRow>();
+          if (data) {
+            const saved = rowToMessage(data);
+            setRemoteThreads((prev) => ({
+              ...prev,
+              [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+            }));
+          }
+          if (isFirst) {
+            await supabase
+              .from("matches")
+              .update({ first_message_at: now, expires_at: null })
+              .eq("id", matchId);
+            setRemoteMatches((prev) =>
+              prev.map((m) =>
+                m.id === matchId ? { ...m, firstMessageAt: now, expiresAt: null } : m,
+              ),
+            );
+          }
+        })();
+      } else {
+        setThreads((prev) => ({ ...prev, [matchId]: [...(prev[matchId] ?? []), message] }));
+        // A message cancels expiry: the match is now a conversation.
+        setMatches((prev) =>
+          prev.map((m) =>
+            m.id === matchId && !m.firstMessageAt
+              ? { ...m, firstMessageAt: now, expiresAt: null }
+              : m,
+          ),
+        );
+      }
 
       playdateEvents.publish({
         type: "message.sent",
@@ -251,7 +465,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
       return message;
     },
-    [threads, setThreads, setMatches],
+    [getThread, setThreads, setMatches, userId],
   );
 
   const revealImage = useCallback(
@@ -268,6 +482,11 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
   const setMatchState = useCallback(
     (matchId: string, state: MatchState) => {
+      if (isRemoteMatchId(matchId)) {
+        setRemoteMatches((prev) => prev.map((m) => (m.id === matchId ? { ...m, state } : m)));
+        void supabase.from("matches").update({ state }).eq("id", matchId);
+        return;
+      }
       setMatches((prev) => prev.map((m) => (m.id === matchId ? { ...m, state } : m)));
     },
     [setMatches],
@@ -275,15 +494,32 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
   const incrementMeetupCount = useCallback(
     (matchId: string) => {
-      setMatches((prev) =>
-        prev.map((m) => {
-          if (m.id !== matchId) return m;
-          const meetupCount = m.meetupCount + 1;
-          const state: MatchState =
-            meetupCount >= PALS_MEETUP_THRESHOLD && m.state === "Active" ? "Pals" : m.state;
-          return { ...m, meetupCount, state, expiresAt: state === "Pals" ? null : m.expiresAt };
-        }),
-      );
+      const bump = (m: Match): Match => {
+        const meetupCount = m.meetupCount + 1;
+        const state: MatchState =
+          meetupCount >= PALS_MEETUP_THRESHOLD && m.state === "Active" ? "Pals" : m.state;
+        return { ...m, meetupCount, state, expiresAt: state === "Pals" ? null : m.expiresAt };
+      };
+
+      if (isRemoteMatchId(matchId)) {
+        setRemoteMatches((prev) => {
+          const next = prev.map((m) => (m.id === matchId ? bump(m) : m));
+          const updated = next.find((m) => m.id === matchId);
+          if (updated) {
+            void supabase
+              .from("matches")
+              .update({
+                meetup_count: updated.meetupCount,
+                state: updated.state,
+                expires_at: updated.expiresAt,
+              })
+              .eq("id", matchId);
+          }
+          return next;
+        });
+        return;
+      }
+      setMatches((prev) => prev.map((m) => (m.id === matchId ? bump(m) : m)));
     },
     [setMatches],
   );
@@ -296,6 +532,15 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           ids.has(m.petAId) || ids.has(m.petBId) ? { ...m, state: "Blocked" as MatchState } : m,
         ),
       );
+      setRemoteMatches((prev) => {
+        const affected = prev.filter((m) => ids.has(m.petAId) || ids.has(m.petBId));
+        affected.forEach((m) => {
+          void supabase.from("matches").update({ state: "Blocked" }).eq("id", m.id);
+        });
+        return prev.map((m) =>
+          ids.has(m.petAId) || ids.has(m.petBId) ? { ...m, state: "Blocked" as MatchState } : m,
+        );
+      });
     },
     [setMatches],
   );
@@ -309,12 +554,17 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     () =>
       matches.filter((match) => {
         if (match.state !== "Active" && match.state !== "Pals") return false;
-        const thread = threads[match.id] ?? [];
+        const thread = isRemoteMatchId(match.id)
+          ? (remoteThreads[match.id] ?? [])
+          : (threads[match.id] ?? []);
         const last = thread[thread.length - 1];
-        return Boolean(last) && last.senderUserId !== currentUser.id;
+        const me = isRemoteMatchId(match.id) ? userId : currentUser.id;
+        return Boolean(last) && last.senderUserId !== me;
       }).length,
-    [matches, threads],
+    [matches, threads, remoteThreads, userId],
   );
+
+  const clearNewRemoteMatch = useCallback(() => setNewRemoteMatch(null), []);
 
   const value = useMemo(
     () => ({
@@ -332,6 +582,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       activeCount,
       awaitingReplyCount,
       scanDraft: scanMessage,
+      newRemoteMatch,
+      clearNewRemoteMatch,
+      refreshRemoteMatches,
     }),
     [
       matches,
@@ -347,6 +600,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       closeMatchesWithPets,
       activeCount,
       awaitingReplyCount,
+      newRemoteMatch,
+      clearNewRemoteMatch,
+      refreshRemoteMatches,
     ],
   );
 
