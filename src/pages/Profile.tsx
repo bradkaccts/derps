@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { ShieldCheck, RotateCcw, SlidersHorizontal, PawPrint, X, Plus } from "lucide-react";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useMyPets, type MyPet } from "@/context/MyPetsContext";
+import { AccountCard } from "@/components/auth/AccountCard";
+import { useAuth } from "@/context/AuthContext";
 import { type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
 import { vibeConfig, allVibes } from "@/lib/vibes";
 import { cn } from "@/lib/utils";
@@ -76,6 +78,7 @@ const Profile = () => {
   const { preferences, updatePreferences, resetPreferences, activeFilterCount } =
     usePreferences();
   const { myPets, activePet, setActivePetId, addMyPet, removeMyPet } = useMyPets();
+  const { requireAuth, profile } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPetName, setNewPetName] = useState("");
   const [newPetSpecies, setNewPetSpecies] = useState<Species>("dog");
@@ -84,6 +87,7 @@ const Profile = () => {
   const [newPetVibes, setNewPetVibes] = useState<VibeTag[]>([]);
 
   const handleAddPet = () => {
+    if (!requireAuth("Adding a Derp saves them to your account.")) return;
     if (!newPetName.trim()) {
       toast.error("Give your pet a name!");
       return;
@@ -98,7 +102,7 @@ const Profile = () => {
       vibes: newPetVibes.length > 0 ? newPetVibes : ["playful"],
       bio: "",
       funFact: "",
-      location: currentUser.location,
+      location: profile?.location ?? currentUser.location,
       distanceKm: 0,
       photos: ["https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop"],
       healthVerified: true,
@@ -112,55 +116,7 @@ const Profile = () => {
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
-      {/* Profile Header */}
-      <div className="flex items-center gap-4">
-        <img
-          src={currentUser.avatar}
-          alt={currentUser.name}
-          className="h-16 w-16 rounded-full object-cover border-2 border-primary"
-        />
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">{currentUser.name}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="secondary" className="capitalize font-semibold">
-              {currentUser.role}
-            </Badge>
-            {currentUser.verified && (
-              <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-                <ShieldCheck className="h-3 w-3" /> Verified
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Info */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Location</span>
-            <span className="font-semibold text-foreground">{currentUser.location}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Home</span>
-            <span className="font-semibold text-foreground">{currentUser.homeType}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Family Size</span>
-            <span className="font-semibold text-foreground">{currentUser.familySize}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Yard</span>
-            <span className="font-semibold text-foreground">
-              {currentUser.hasYard ? "Yes 🌿" : "No"}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Trust Score</span>
-            <span className="font-bold text-primary">{currentUser.trustScore}/100</span>
-          </div>
-        </CardContent>
-      </Card>
+      <AccountCard />
 
       <Separator />
 
