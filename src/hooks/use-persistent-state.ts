@@ -67,7 +67,7 @@ export function usePersistentState<T>(key: string, initialValue: T) {
       }
       // Nothing stored yet — carry the guest session up into the account.
       await supabase.from("user_state").upsert(
-        { user_id: userId, key: keyRef.current, data: { v: valueRef.current } },
+        { user_id: userId, key: keyRef.current, data: { v: valueRef.current } as unknown as Record<string, never> },
         { onConflict: "user_id,key" },
       );
     })();
@@ -82,7 +82,7 @@ export function usePersistentState<T>(key: string, initialValue: T) {
     if (!userId || hydratedFor.current !== userId) return;
     const timer = window.setTimeout(() => {
       void supabase.from("user_state").upsert(
-        { user_id: userId, key: keyRef.current, data: { v: value } },
+        { user_id: userId, key: keyRef.current, data: { v: value } as unknown as Record<string, never> },
         { onConflict: "user_id,key" },
       );
     }, 600);
