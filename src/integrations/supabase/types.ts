@@ -14,10 +14,200 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_messages: {
+        Row: {
+          body: string
+          id: string
+          match_id: string
+          sender_user_id: string
+          sent_at: string
+          type: string
+        }
+        Insert: {
+          body: string
+          id?: string
+          match_id: string
+          sender_user_id: string
+          sent_at?: string
+          type?: string
+        }
+        Update: {
+          body?: string
+          id?: string
+          match_id?: string
+          sender_user_id?: string
+          sent_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          first_message_at: string | null
+          id: string
+          matched_at: string
+          meetup_count: number
+          pet_a_id: string
+          pet_b_id: string
+          state: string
+          updated_at: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          first_message_at?: string | null
+          id?: string
+          matched_at?: string
+          meetup_count?: number
+          pet_a_id: string
+          pet_b_id: string
+          state?: string
+          updated_at?: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          first_message_at?: string | null
+          id?: string
+          matched_at?: string
+          meetup_count?: number
+          pet_a_id?: string
+          pet_b_id?: string
+          state?: string
+          updated_at?: string
+          user_a_id?: string
+          user_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_pet_a_id_fkey"
+            columns: ["pet_a_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_pet_b_id_fkey"
+            columns: ["pet_b_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_personalities: {
+        Row: {
+          completed_at: string | null
+          confidence: Json
+          created_at: string
+          derivation_version: string
+          history: Json
+          pet_id: string
+          quiz_version: string
+          traits: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          confidence?: Json
+          created_at?: string
+          derivation_version?: string
+          history?: Json
+          pet_id: string
+          quiz_version?: string
+          traits?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          confidence?: Json
+          created_at?: string
+          derivation_version?: string
+          history?: Json
+          pet_id?: string
+          quiz_version?: string
+          traits?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_personalities_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_preferences: {
+        Row: {
+          availability_windows: string[]
+          created_at: string
+          cross_species_opt_in: boolean
+          hard_filters: Json
+          intact_opt_out: boolean
+          max_travel_miles: number
+          pet_id: string
+          preferred_meetup_types: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_windows?: string[]
+          created_at?: string
+          cross_species_opt_in?: boolean
+          hard_filters?: Json
+          intact_opt_out?: boolean
+          max_travel_miles?: number
+          pet_id: string
+          preferred_meetup_types?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_windows?: string[]
+          created_at?: string
+          cross_species_opt_in?: boolean
+          hard_filters?: Json
+          intact_opt_out?: boolean
+          max_travel_miles?: number
+          pet_id?: string
+          preferred_meetup_types?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_preferences_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           age: string
           age_category: string
+          age_weeks: number
           bio: string
           breed: string
           created_at: string
@@ -25,17 +215,27 @@ export type Database = {
           gender: string
           health_verified: boolean
           id: string
+          intact: boolean
+          is_discoverable: boolean
+          last_active_at: string
+          latitude: number | null
           location: string
+          longitude: number | null
           name: string
           photos: string[]
+          safety_hold: boolean
+          social_status: string
           species: string
           updated_at: string
           user_id: string
+          vaccination_attested_at: string | null
+          vaccination_expires_at: string | null
           vibes: string[]
         }
         Insert: {
           age?: string
           age_category?: string
+          age_weeks?: number
           bio?: string
           breed?: string
           created_at?: string
@@ -43,17 +243,27 @@ export type Database = {
           gender?: string
           health_verified?: boolean
           id?: string
+          intact?: boolean
+          is_discoverable?: boolean
+          last_active_at?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           name: string
           photos?: string[]
+          safety_hold?: boolean
+          social_status?: string
           species?: string
           updated_at?: string
           user_id: string
+          vaccination_attested_at?: string | null
+          vaccination_expires_at?: string | null
           vibes?: string[]
         }
         Update: {
           age?: string
           age_category?: string
+          age_weeks?: number
           bio?: string
           breed?: string
           created_at?: string
@@ -61,12 +271,21 @@ export type Database = {
           gender?: string
           health_verified?: boolean
           id?: string
+          intact?: boolean
+          is_discoverable?: boolean
+          last_active_at?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           name?: string
           photos?: string[]
+          safety_hold?: boolean
+          social_status?: string
           species?: string
           updated_at?: string
           user_id?: string
+          vaccination_attested_at?: string | null
+          vaccination_expires_at?: string | null
           vibes?: string[]
         }
         Relationships: []
@@ -109,6 +328,60 @@ export type Database = {
           verification_tier?: number
         }
         Relationships: []
+      }
+      swipes: {
+        Row: {
+          actor_pet_id: string
+          actor_user_id: string
+          created_at: string
+          direction: string
+          feature_version: string | null
+          id: string
+          model_version: string | null
+          score_at_impression: number | null
+          strategy_id: string | null
+          target_pet_id: string
+        }
+        Insert: {
+          actor_pet_id: string
+          actor_user_id: string
+          created_at?: string
+          direction: string
+          feature_version?: string | null
+          id?: string
+          model_version?: string | null
+          score_at_impression?: number | null
+          strategy_id?: string | null
+          target_pet_id: string
+        }
+        Update: {
+          actor_pet_id?: string
+          actor_user_id?: string
+          created_at?: string
+          direction?: string
+          feature_version?: string | null
+          id?: string
+          model_version?: string | null
+          score_at_impression?: number | null
+          strategy_id?: string | null
+          target_pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swipes_actor_pet_id_fkey"
+            columns: ["actor_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swipes_target_pet_id_fkey"
+            columns: ["target_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -162,6 +435,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_match_participant: {
+        Args: { _match_id: string; _user_id: string }
         Returns: boolean
       }
     }
