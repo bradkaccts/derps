@@ -34,18 +34,22 @@ export function toScoredPet(
   personality: PetPersonality | undefined,
   preference: PetPreference,
   vaccination: PlaydatePet["vaccination"],
+  ownerId?: string,
 ): ScoredPet | null {
   if (!personality) return null;
   return {
     pet: {
       ...pet,
-      ownerId: currentUser.id,
+      ownerId: ownerId ?? currentUser.id,
       socialStatus: "Active",
       isPlaydateActive: true,
       vaccination,
       intact: false,
       ageWeeks: 200,
-      homeGeo: HOME_GEO,
+      homeGeo: {
+        lat: pet.latitude ?? HOME_GEO.lat,
+        lng: pet.longitude ?? HOME_GEO.lng,
+      },
       lastActiveAt: new Date().toISOString(),
       historicalRightSwipeRate: 0.3,
       ownerResponsiveness: 0.9,
@@ -55,6 +59,7 @@ export function toScoredPet(
     preference,
   };
 }
+
 
 /** Deterministic pseudo-random in [0,1) — the same pair always resolves the same way. */
 function pairRoll(a: string, b: string): number {
