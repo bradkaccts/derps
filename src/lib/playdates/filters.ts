@@ -27,9 +27,19 @@ export interface FilterInput {
   now?: Date;
 }
 
-function vaccinationCurrent(pet: ScoredPet, now: Date): boolean {
+/**
+ * A *missing* attestation is a brand-new Derp that has not been through
+ * onboarding yet — it stays discoverable and is flagged as unverified on the
+ * card. A *lapsed* attestation is a stale record and still excludes the pair.
+ */
+function vaccinationLapsed(pet: ScoredPet, now: Date): boolean {
   if (!pet.pet.vaccination) return false;
-  return new Date(pet.pet.vaccination.expiresAt).getTime() > now.getTime();
+  return new Date(pet.pet.vaccination.expiresAt).getTime() <= now.getTime();
+}
+
+/** True when a Derp has no attestation on file yet (new account, pre-approval). */
+export function vaccinationPending(pet: ScoredPet): boolean {
+  return !pet.pet.vaccination;
 }
 
 function sharesGuardingTrigger(a: GuardingTrigger[], b: GuardingTrigger[]): boolean {
@@ -66,8 +76,9 @@ export function applyHardFilters({ actor, candidate, blocks, now = new Date() }:
     }
   }
 
-  // Vaccination — either party's attestation expired or absent.
-  if (!vaccinationCurrent(actor, now) || !vaccinationCurrent(candidate, now)) {
+  // Vaccination — an expired attestation excludes; a missing one does not, so
+  // a new Derp is discoverable while its paperwork is still pending.
+  if (vaccinationLapsed(actor, now) || vaccinationLapsed(candidate, now)) {
     return { passed: false, reason: "vaccination" };
   }
 
@@ -146,7 +157,7 @@ export const HARD_FILTER_LABELS: Record<string, string> = {
   species: "Different species and cross-species matching is off",
   size_limit: "Outside a declared size limit",
   life_stage_limit: "Outside a declared age limit",
-  vaccination: "Vaccination attestation missing or expired",
+  vaccination: "Vaccination attestation expired",
   puppy_protection: "Under 16 weeks old",
   mutual_resource_guarding: "Both pets guard the same resource",
   guarding_trigger_excluded: "Guarding trigger excluded by a hard filter",

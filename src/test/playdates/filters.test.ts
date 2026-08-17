@@ -25,16 +25,17 @@ describe("hard filters (§6.3)", () => {
     expect(applyHardFilters({ actor: dog, candidate: optedInCat, blocks: noBlocks }).passed).toBe(true);
   });
 
-  it("excludes when either vaccination attestation is expired or absent", () => {
+  it("excludes when either vaccination attestation is expired", () => {
     const expired = makePet({ pet: { vaccination: { attestedAt: daysAgo(400), expiresAt: daysAgo(5) } } });
     expect(applyHardFilters({ actor: makePet(), candidate: expired, blocks: noBlocks }).reason).toBe(
       "vaccination",
     );
+  });
 
+  it("keeps a brand-new Derp with no attestation yet in the pool", () => {
     const absent = makePet({ pet: { vaccination: null } });
-    expect(applyHardFilters({ actor: absent, candidate: makePet(), blocks: noBlocks }).reason).toBe(
-      "vaccination",
-    );
+    expect(applyHardFilters({ actor: absent, candidate: makePet(), blocks: noBlocks }).passed).toBe(true);
+    expect(applyHardFilters({ actor: makePet(), candidate: absent, blocks: noBlocks }).passed).toBe(true);
   });
 
   it("excludes pets under 16 weeks entirely", () => {

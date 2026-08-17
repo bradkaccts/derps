@@ -333,6 +333,8 @@ export interface FeedCard {
   species: Species;
   photos: string[];
   healthVerified: boolean;
+  /** New Derp with no vaccination attestation on file yet — shown, but flagged. */
+  vaccinationPending: boolean;
   /** SEC-803 — a band, never a distance and never a coordinate. */
   distanceBand: DistanceBand;
   score: number;

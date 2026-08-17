@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
-import { Heart, X, Sparkles, Undo2, MapPin, ShieldCheck } from "lucide-react";
+import { Heart, X, Sparkles, Undo2, MapPin, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -294,7 +294,13 @@ function SwipeCard({ card, isTop, stackIndex, exit, onSwipe, onOpenProfile }: Sw
               Booped you!
             </div>
           )}
-          {card.healthVerified && !card.boopedYou && (
+          {card.vaccinationPending && !card.boopedYou && (
+            <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground shadow">
+              <ShieldQuestion className="h-3 w-3" aria-hidden />
+              New · vaccines pending
+            </div>
+          )}
+          {card.healthVerified && !card.vaccinationPending && !card.boopedYou && (
             <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-bold text-primary-foreground">
               <ShieldCheck className="h-3 w-3" aria-hidden />
               Vaccines current
