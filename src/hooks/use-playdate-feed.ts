@@ -237,10 +237,20 @@ export function usePlaydateFeed() {
 
   const undo = useCallback(() => {
     if (!actor) return null;
+    if (!actor) return null;
     const undone = swipeStore.undoLastSwipe(actor.pet.id);
+    // An undo has to reach the other side too, or the swipe still counts there.
+    if (undone && isRealPetId(undone.targetPetId) && isRealPetId(actor.pet.id)) {
+      void supabase
+        .from("swipes")
+        .delete()
+        .eq("actor_pet_id", actor.pet.id)
+        .eq("target_pet_id", undone.targetPetId);
+    }
     setDeckVersion((v) => v + 1);
     return undone;
   }, [actor, swipeStore]);
+
 
   const refresh = useCallback(() => setDeckVersion((v) => v + 1), []);
 
