@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, PawPrint, ShieldCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ const TIERS = [
 export function AccountCard() {
   const { user, profile, isSignedIn, signOut } = useAuth();
   const tier = profile?.verification_tier ?? 0;
+  const onAccountPage = useLocation().pathname === "/account";
 
   if (!isSignedIn) {
     return (
