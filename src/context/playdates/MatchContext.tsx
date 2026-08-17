@@ -162,6 +162,22 @@ function rowToMessage(row: MessageRow): PlaydateMessage {
   };
 }
 
+/**
+ * A thread reads as a conversation only if it's in send order. Server rows and
+ * optimistic bubbles arrive out of order, so merge by id and sort by sent time.
+ */
+function mergeThread(
+  existing: PlaydateMessage[],
+  incoming: PlaydateMessage[],
+): PlaydateMessage[] {
+  const byId = new Map<string, PlaydateMessage>();
+  [...existing, ...incoming].forEach((m) => byId.set(m.id, m));
+  return [...byId.values()].sort((a, b) => {
+    const delta = new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime();
+    return delta !== 0 ? delta : a.id.localeCompare(b.id);
+  });
+}
+
 interface MatchContextValue {
   matches: Match[];
   getMatch: (matchId: string) => Match | undefined;
