@@ -53,8 +53,8 @@ export function AccountCard() {
   const name = profile?.display_name || user?.email?.split("@")[0] || "Derp human";
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-4">
+    <Card className="rounded-3xl border-2">
+      <CardContent className="space-y-4 p-5">
         <div className="flex items-center gap-3">
           {profile?.avatar_url ? (
             <img
