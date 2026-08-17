@@ -17,6 +17,7 @@ import { PlaydatesProvider } from "@/context/playdates/PlaydatesProvider";
 import { FEATURES } from "@/config/features";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Account from "./pages/Account";
 import PlaydatesFeed from "./pages/PlaydatesFeed";
 import PlaydateQuiz from "./pages/PlaydateQuiz";
 import PlaydateMatches from "./pages/PlaydateMatches";
