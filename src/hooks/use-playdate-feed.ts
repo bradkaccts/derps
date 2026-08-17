@@ -153,6 +153,19 @@ export function usePlaydateFeed() {
     (card: FeedCard, direction: SwipeDirection): SwipeOutcome => {
       if (!actor) return { matched: false, matchId: null, limitReached: false };
 
+      // Passing is free for guests; a heart or a boop reaches another human,
+      // so it needs an account (Tier 0).
+      if (
+        direction !== "pass" &&
+        !requireAuth(
+          direction === "boop"
+            ? "Boops go straight to another Derp's human."
+            : "Hearts are saved to your account so we can find your match.",
+        )
+      ) {
+        return { matched: false, matchId: null, limitReached: false };
+      }
+
       if (direction === "like" && swipeStore.likesRemaining(actor.pet.id) === 0) {
         return { matched: false, matchId: null, limitReached: true };
       }
@@ -180,7 +193,7 @@ export function usePlaydateFeed() {
       const match = matchStore.createMatch(actor.pet.id, card.petId);
       return { matched: true, matchId: match.id, limitReached: false };
     },
-    [actor, pool, swipeStore, matchStore],
+    [actor, pool, swipeStore, matchStore, requireAuth],
   );
 
   const undo = useCallback(() => {
