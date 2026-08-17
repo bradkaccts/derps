@@ -253,11 +253,13 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
 
   const proposeMeetup = useCallback(
     (input: ProposeMeetupInput) => {
+      // A Derpdate on a real match is a shared row, so both humans see it.
+      const shared = isRemoteMatchId(input.matchId) && Boolean(userId);
       const meetup: Meetup = {
-        id: `meetup-${Date.now()}`,
+        id: shared ? crypto.randomUUID() : `meetup-${Date.now()}`,
         matchId: input.matchId,
         venueId: input.venueId,
-        proposedByUserId: currentUser.id,
+        proposedByUserId: shared ? userId! : currentUser.id,
         scheduledStart: input.scheduledStart,
         durationMinutes: input.durationMinutes,
         state: "Proposed",
@@ -265,7 +267,23 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
         checkinBAt: null,
         recurrenceRule: null,
       };
-      setMeetups((prev) => [meetup, ...prev]);
+      if (shared) {
+        setRemoteMeetups((prev) => [meetup, ...prev]);
+        fireAndForget(
+          supabase.from("meetups").insert({
+            id: meetup.id,
+            match_id: meetup.matchId,
+            venue_id: meetup.venueId,
+            proposed_by_user_id: meetup.proposedByUserId,
+            scheduled_start: meetup.scheduledStart,
+            duration_minutes: meetup.durationMinutes,
+            state: meetup.state,
+          }),
+          "meetup insert",
+        );
+      } else {
+        setLocalMeetups((prev) => [meetup, ...prev]);
+      }
       playdateEvents.publish({
         type: "meetup.proposed",
         meetupId: meetup.id,
@@ -275,14 +293,14 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
       });
       return meetup;
     },
-    [setMeetups],
+    [setLocalMeetups, userId],
   );
 
   const setState = useCallback(
     (meetupId: string, state: MeetupState) => {
-      setMeetups((prev) => prev.map((m) => (m.id === meetupId ? { ...m, state } : m)));
+      patchMeetup(meetupId, { state }, { state });
     },
-    [setMeetups],
+    [patchMeetup],
   );
 
   const respondToMeetup = useCallback(
