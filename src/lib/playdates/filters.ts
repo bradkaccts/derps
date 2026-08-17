@@ -76,8 +76,9 @@ export function applyHardFilters({ actor, candidate, blocks, now = new Date() }:
     }
   }
 
-  // Vaccination — either party's attestation expired or absent.
-  if (!vaccinationCurrent(actor, now) || !vaccinationCurrent(candidate, now)) {
+  // Vaccination — an expired attestation excludes; a missing one does not, so
+  // a new Derp is discoverable while its paperwork is still pending.
+  if (vaccinationLapsed(actor, now) || vaccinationLapsed(candidate, now)) {
     return { passed: false, reason: "vaccination" };
   }
 
