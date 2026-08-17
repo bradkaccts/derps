@@ -4,10 +4,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { usePersistentState } from "@/hooks/use-persistent-state";
+
 import { supabase } from "@/integrations/supabase/client";
 import { fireAndForget } from "@/lib/supabase-fire";
 import { useAuth } from "@/context/AuthContext";
@@ -180,6 +183,10 @@ interface MatchContextValue {
   /** A real match that just landed from the other side, for the celebration. */
   newRemoteMatch: Match | null;
   clearNewRemoteMatch: () => void;
+  /** The latest message delivered from the other person, for notifications. */
+  incomingMessage: PlaydateMessage | null;
+  clearIncomingMessage: () => void;
+
   refreshRemoteMatches: () => Promise<void>;
 }
 
@@ -201,6 +208,11 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const [remoteMatches, setRemoteMatches] = useState<Match[]>([]);
   const [remoteThreads, setRemoteThreads] = useState<Record<string, PlaydateMessage[]>>({});
   const [newRemoteMatch, setNewRemoteMatch] = useState<Match | null>(null);
+  const [incomingMessage, setIncomingMessage] = useState<PlaydateMessage | null>(null);
+
+  /** Message ids already delivered to this session, so a re-pull isn't "new". */
+  const seenMessageIds = useRef<Set<string>>(new Set());
+  const primed = useRef(false);
 
   /* ---------------- Real matches and threads ---------------- */
 
@@ -208,6 +220,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     if (!userId) {
       setRemoteMatches([]);
       setRemoteThreads({});
+      seenMessageIds.current = new Set();
+      primed.current = false;
       return;
     }
     const { data } = await supabase
@@ -225,6 +239,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
 
     if (rows.length === 0) {
       setRemoteThreads({});
+      primed.current = true;
       return;
     }
     const { data: messages } = await supabase
@@ -238,10 +253,20 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       .returns<MessageRow[]>();
 
     const grouped: Record<string, PlaydateMessage[]> = {};
+    let latestFromPartner: PlaydateMessage | null = null;
     (messages ?? []).forEach((row) => {
-      (grouped[row.match_id] ??= []).push(rowToMessage(row));
+      const message = rowToMessage(row);
+      (grouped[row.match_id] ??= []).push(message);
+      const isNew = !seenMessageIds.current.has(message.id);
+      seenMessageIds.current.add(message.id);
+      if (isNew && primed.current && message.senderUserId !== userId) {
+        latestFromPartner = message;
+      }
     });
     setRemoteThreads(grouped);
+    primed.current = true;
+    if (latestFromPartner) setIncomingMessage(latestFromPartner);
+
   }, [userId]);
 
   useEffect(() => {
@@ -251,8 +276,11 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   // Live delivery: a match created by the other person's boop, and their replies.
   useEffect(() => {
     if (!userId) return;
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+
     const channel = supabase
-      .channel("derpdate-matches")
+      .channel(`derpdate-matches-${userId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "matches" },
@@ -277,19 +305,55 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         { event: "INSERT", schema: "public", table: "match_messages" },
         (payload) => {
           const message = rowToMessage(payload.new as MessageRow);
+          if (seenMessageIds.current.has(message.id)) return;
+          seenMessageIds.current.add(message.id);
           setRemoteThreads((prev) => {
             const existing = prev[message.matchId] ?? [];
             if (existing.some((m) => m.id === message.id)) return prev;
             return { ...prev, [message.matchId]: [...existing, message] };
           });
+          if (message.senderUserId !== userId) {
+            setIncomingMessage(message);
+          }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (cancelled) return;
+        if (status === "SUBSCRIBED") {
+          // Catch anything the partner sent while the socket was down.
+          void refreshRemoteMatches();
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          retry = setTimeout(() => {
+            if (!cancelled) void refreshRemoteMatches();
+          }, 4000);
+        }
+      });
+
+    // Sockets die when a phone sleeps or a tab is backgrounded; re-pull on return.
+    const resync = () => {
+      if (document.visibilityState === "visible") void refreshRemoteMatches();
+    };
+    document.addEventListener("visibilitychange", resync);
+    window.addEventListener("online", resync);
+
+    /* Realtime is the fast path, not the guarantee: a websocket can be blocked
+       by a network or drop a row silently. This poll makes delivery certain. */
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshRemoteMatches();
+    }, 8000);
 
     return () => {
+      cancelled = true;
+      if (retry) clearTimeout(retry);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", resync);
+      window.removeEventListener("online", resync);
       void supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, refreshRemoteMatches]);
+
 
   const matches = useMemo(() => {
     const seen = new Set(remoteMatches.map((m) => m.id));
@@ -411,7 +475,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           [matchId]: [...(prev[matchId] ?? []), message],
         }));
         void (async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("match_messages")
             .insert({
               match_id: matchId,
@@ -421,14 +485,22 @@ export function MatchProvider({ children }: { children: ReactNode }) {
             })
             .select(sel("id, match_id, sender_user_id, body, type, sent_at"))
             .maybeSingle<MessageRow>();
-          if (data) {
-            const saved = rowToMessage(data);
+          if (error || !data) {
+            // Nothing reached the other person — say so instead of faking delivery.
             setRemoteThreads((prev) => ({
               ...prev,
-              [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+              [matchId]: (prev[matchId] ?? []).filter((m) => m.id !== message.id),
             }));
+            toast.error("That message didn't send. Check your connection and try again.");
+            return;
           }
+          const saved = rowToMessage(data);
+          setRemoteThreads((prev) => ({
+            ...prev,
+            [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+          }));
           if (isFirst) {
+
             await supabase
               .from("matches")
               .update({ first_message_at: now, expires_at: null })
@@ -569,6 +641,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   );
 
   const clearNewRemoteMatch = useCallback(() => setNewRemoteMatch(null), []);
+  const clearIncomingMessage = useCallback(() => setIncomingMessage(null), []);
 
   const value = useMemo(
     () => ({
@@ -588,6 +661,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       scanDraft: scanMessage,
       newRemoteMatch,
       clearNewRemoteMatch,
+      incomingMessage,
+      clearIncomingMessage,
       refreshRemoteMatches,
     }),
     [
@@ -606,6 +681,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       awaitingReplyCount,
       newRemoteMatch,
       clearNewRemoteMatch,
+      incomingMessage,
+      clearIncomingMessage,
       refreshRemoteMatches,
     ],
   );
