@@ -173,6 +173,14 @@ const Profile = () => {
           ))}
         </div>
 
+        {activePet && (
+          <div className="mb-4">
+            <DiscoveryCard pet={activePet} />
+          </div>
+        )}
+
+
+
         {/* Add pet form */}
         {showAddForm ? (
           <Card>
