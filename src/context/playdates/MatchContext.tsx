@@ -472,8 +472,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         // by id once the insert returns.
         setRemoteThreads((prev) => ({
           ...prev,
-          [matchId]: [...(prev[matchId] ?? []), message],
+          [matchId]: mergeThread(prev[matchId] ?? [], [message]),
         }));
+
         void (async () => {
           const { data, error } = await supabase
             .from("match_messages")
