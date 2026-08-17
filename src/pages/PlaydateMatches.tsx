@@ -17,7 +17,8 @@ import {
   usePetPersonality,
   useSafety,
 } from "@/context/playdates/PlaydatesProvider";
-import { findPlaydatePet, mockPlaydatePersonalities, ownerName } from "@/data/mock-playdate-pets";
+import { mockPlaydatePersonalities, ownerName } from "@/data/mock-playdate-pets";
+import { usePetLookup } from "@/hooks/use-pet-lookup";
 import { mockVenues } from "@/data/mock-venues";
 import { isWithinGeofence } from "@/lib/playdates/geo";
 import { type Match } from "@/lib/playdates/types";
@@ -38,6 +39,7 @@ const PlaydateMatches = () => {
   const meetupStore = useMeetups();
   const safety = useSafety();
   const { getPersonality } = usePetPersonality();
+  const lookupPet = usePetLookup();
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedbackFor, setFeedbackFor] = useState<string | null>(null);
@@ -50,7 +52,7 @@ const PlaydateMatches = () => {
   const selected = matchId ? matchStore.getMatch(matchId) : undefined;
   const partnerId =
     selected && activePet ? matchStore.partnerPetId(selected, activePet.id) : undefined;
-  const partner = findPlaydatePet(partnerId ?? "");
+  const partner = lookupPet(partnerId);
 
   const pairTraits = useMemo((): [
     ReturnType<typeof getPersonality>,
@@ -112,11 +114,11 @@ const PlaydateMatches = () => {
     // Block is user-level: every thread with that person closes, not just this one.
     const theirPets = matches
       .map((m) => (activePet ? matchStore.partnerPetId(m, activePet.id) : ""))
-      .filter((id) => findPlaydatePet(id)?.ownerId === partner.ownerId);
+      .filter((id) => lookupPet(id)?.ownerId === partner.ownerId);
     matchStore.closeMatchesWithPets(theirPets);
     toast.success("Blocked. They won't be told, and you won't see each other again.");
     navigate("/playdates/matches");
-  }, [partner, safety, matches, activePet, matchStore, navigate]);
+  }, [partner, safety, matches, activePet, matchStore, navigate, lookupPet]);
 
   if (!activePet) {
     return (
@@ -316,7 +318,8 @@ function MatchRow({
   active: boolean;
 }) {
   const { partnerPetId, getThread } = useMatches();
-  const partner = findPlaydatePet(partnerPetId(match, myPetId));
+  const lookupPet = usePetLookup();
+  const partner = lookupPet(partnerPetId(match, myPetId));
   const thread = getThread(match.id);
   const last = thread[thread.length - 1];
 
