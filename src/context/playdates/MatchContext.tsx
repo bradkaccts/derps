@@ -441,7 +441,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           [matchId]: [...(prev[matchId] ?? []), message],
         }));
         void (async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("match_messages")
             .insert({
               match_id: matchId,
@@ -451,14 +451,22 @@ export function MatchProvider({ children }: { children: ReactNode }) {
             })
             .select(sel("id, match_id, sender_user_id, body, type, sent_at"))
             .maybeSingle<MessageRow>();
-          if (data) {
-            const saved = rowToMessage(data);
+          if (error || !data) {
+            // Nothing reached the other person — say so instead of faking delivery.
             setRemoteThreads((prev) => ({
               ...prev,
-              [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+              [matchId]: (prev[matchId] ?? []).filter((m) => m.id !== message.id),
             }));
+            toast.error("That message didn't send. Check your connection and try again.");
+            return;
           }
+          const saved = rowToMessage(data);
+          setRemoteThreads((prev) => ({
+            ...prev,
+            [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+          }));
           if (isFirst) {
+
             await supabase
               .from("matches")
               .update({ first_message_at: now, expires_at: null })
