@@ -58,7 +58,7 @@ function FilterChip({
 }
 
 const Discover = () => {
-  const { pool: remotePool, loading } = useRemotePool();
+  const { remotePool, loadingRemotePool: loading } = useRemotePool();
   const [distance, setDistance] = useState<DistanceKey>("any");
   const [stages, setStages] = useState<LifeStage[]>([]);
   const [styles, setStyles] = useState<PlayStyle[]>([]);
@@ -178,7 +178,7 @@ const Discover = () => {
       ) : results.length === 0 ? (
         <DerpyEmpty
           title="No Derps match those picks"
-          description="Try widening the distance or clearing a filter — there are more Derps just outside the net."
+          message="Try widening the distance or clearing a filter — there are more Derps just outside the net."
         />
       ) : (
         <div className="animate-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
