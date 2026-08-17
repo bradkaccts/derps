@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthGateSheet } from "@/components/auth/AuthGateSheet";
+import { RequireAuthRoute } from "@/components/auth/RequireAuthRoute";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { PreferencesProvider } from "@/context/PreferencesContext";
 import { MessagingProvider } from "@/context/MessagingContext";
@@ -51,7 +52,14 @@ const App = () => (
                           {/* Release 1 is Derpdates-first: the feed is home. */}
                           <Route path="/" element={<PlaydatesFeed />} />
                           <Route path="/auth" element={<Auth />} />
-                          <Route path="/inbox" element={<Inbox />} />
+                          <Route
+                            path="/inbox"
+                            element={
+                              <RequireAuthRoute reason="Your inbox holds real conversations with other Derp humans, so it needs an account.">
+                                <Inbox />
+                              </RequireAuthRoute>
+                            }
+                          />
                           <Route path="/my-derps" element={<MyDerps />} />
                           <Route path="/profile" element={<Profile />} />
 
@@ -69,8 +77,22 @@ const App = () => (
                           {/* Derps Playdates — pet-to-pet social matching */}
                           <Route path="/playdates" element={<PlaydatesFeed />} />
                           <Route path="/playdates/quiz/:petId" element={<PlaydateQuiz />} />
-                          <Route path="/playdates/matches" element={<PlaydateMatches />} />
-                          <Route path="/playdates/matches/:matchId" element={<PlaydateMatches />} />
+                          <Route
+                            path="/playdates/matches"
+                            element={
+                              <RequireAuthRoute reason="Matches and Derpdate plans live on your account.">
+                                <PlaydateMatches />
+                              </RequireAuthRoute>
+                            }
+                          />
+                          <Route
+                            path="/playdates/matches/:matchId"
+                            element={
+                              <RequireAuthRoute reason="Matches and Derpdate plans live on your account.">
+                                <PlaydateMatches />
+                              </RequireAuthRoute>
+                            }
+                          />
                           <Route path="/playdates/venues" element={<PlaydateVenues />} />
                           <Route path="/playdates/safety" element={<PlaydateSafety />} />
                           <Route path="*" element={<NotFound />} />
