@@ -11,6 +11,8 @@ import { MeetupComposer } from "@/components/playdates/MeetupComposer";
 import { FeedbackDialog } from "@/components/playdates/FeedbackDialog";
 import { ReportDialog } from "@/components/playdates/ReportDialog";
 import { useMyPets } from "@/context/MyPetsContext";
+import { useAuth } from "@/context/AuthContext";
+import { currentUser } from "@/data/mock-users";
 import {
   useMatches,
   useMeetups,
@@ -40,6 +42,7 @@ const PlaydateMatches = () => {
   const safety = useSafety();
   const { getPersonality } = usePetPersonality();
   const lookupPet = usePetLookup();
+  const { user } = useAuth();
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedbackFor, setFeedbackFor] = useState<string | null>(null);
@@ -102,10 +105,12 @@ const PlaydateMatches = () => {
         toast.error("You'll need to be at the venue to check in.");
         return;
       }
-      meetupStore.checkIn(meetupId, "b", true);
+      // The proposer holds the "a" slot on the shared row; the invitee holds "b".
+      const me = user?.id ?? currentUser.id;
+      meetupStore.checkIn(meetupId, meetup.proposedByUserId === me ? "a" : "b", true);
       toast.success("Checked in! Have a good one 🐾");
     },
-    [meetupStore, evaluateGeofence],
+    [meetupStore, evaluateGeofence, user],
   );
 
   const handleBlock = useCallback(() => {
