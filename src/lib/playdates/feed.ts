@@ -143,6 +143,7 @@ export function buildFeed(input: BuildFeedInput): FeedResult {
       species: candidatePet.species,
       photos: candidatePet.photos,
       healthVerified: candidatePet.healthVerified,
+      vaccinationPending: !candidatePet.vaccination,
       distanceBand,
       score: result.score,
       reason: buildReasonString(
