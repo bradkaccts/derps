@@ -51,6 +51,8 @@ const App = () => (
                   <PlaydateProvider>
                     <PlaydatesProvider>
                       <AppLayout>
+                        <IncomingMessageNotifier />
+
                         <Routes>
                           {/* Release 1 is Derpdates-first: the feed is home. */}
                           <Route path="/" element={<PlaydatesFeed />} />
