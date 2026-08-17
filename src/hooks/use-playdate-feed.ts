@@ -16,10 +16,14 @@ import {
   useMatches,
   useMeetups,
   usePetPersonality,
+  useRemoteDerps,
   useSafety,
   useSwipes,
 } from "@/context/playdates/PlaydatesProvider";
+import { isRealPetId } from "@/lib/playdates/remote-pets";
+import { supabase } from "@/integrations/supabase/client";
 import { currentUser } from "@/data/mock-users";
+
 
 /** The launch metro (§13.8). The user's own pets are anchored here. */
 export const HOME_GEO = { lat: 34.2746, lng: -119.229 };
