@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useCallback, useContext, useMemo, type ReactNode } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateQuizQuestions } from "@/data/playdate-quiz";
 import {
@@ -72,7 +73,7 @@ interface PetPersonalityContextValue {
   revokeAttestation: (petId: string) => void;
 }
 
-const PetPersonalityContext = createContext<PetPersonalityContextValue | null>(null);
+const PetPersonalityContext = stableContext<PetPersonalityContextValue>("PetPersonalityContext");
 
 export function PetPersonalityProvider({ children }: { children: ReactNode }) {
   const [responses, setResponses] = usePersistentState<Record<string, QuizResponse[]>>(

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useContext, useState, useCallback, type ReactNode } from "react";
 import { type Species, type VibeTag, type AgeCategory, type Pet } from "@/data/mock-pets";
 
 export interface AdopterPreferences {
@@ -31,7 +32,7 @@ interface PreferencesContextValue {
   activeFilterCount: number;
 }
 
-const PreferencesContext = createContext<PreferencesContextValue | null>(null);
+const PreferencesContext = stableContext<PreferencesContextValue>("PreferencesContext");
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<AdopterPreferences>(defaultPreferences);

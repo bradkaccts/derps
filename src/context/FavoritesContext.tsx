@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useContext, useState, useCallback, type ReactNode } from "react";
 import { mockPets, type Pet } from "@/data/mock-pets";
 
 interface FavoritesContextValue {
@@ -11,7 +12,7 @@ interface FavoritesContextValue {
   favoritePets: Pet[];
 }
 
-const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+const FavoritesContext = stableContext<FavoritesContextValue>("FavoritesContext");
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());

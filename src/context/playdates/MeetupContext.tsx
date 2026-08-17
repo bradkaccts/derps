@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useCallback, useContext, useMemo, type ReactNode } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { isWithinCheckinWindow } from "@/lib/playdates/geo";
@@ -88,7 +89,7 @@ interface MeetupContextValue {
   suggestVenue: (suggestion: Partial<Venue>) => void;
 }
 
-const MeetupContext = createContext<MeetupContextValue | null>(null);
+const MeetupContext = stableContext<MeetupContextValue>("MeetupContext");
 
 export function MeetupProvider({ children }: { children: ReactNode }) {
   const [meetups, setMeetups] = usePersistentState<Meetup[]>(

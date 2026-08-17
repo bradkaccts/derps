@@ -1,3 +1,4 @@
+import { stableContext } from "@/context/stable-context";
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type ApplicationStatus =
@@ -59,7 +60,7 @@ interface ApplicationContextType {
   getApplicationForPetByAdopter: (petId: string, adopterId: string) => Application | undefined;
 }
 
-const ApplicationContext = createContext<ApplicationContextType | null>(null);
+const ApplicationContext = stableContext<ApplicationContextType>("ApplicationContext");
 
 export function ApplicationProvider({ children }: { children: ReactNode }) {
   const [applications, setApplications] = useState<Application[]>(seedApplications);

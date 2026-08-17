@@ -1,5 +1,5 @@
+import { stableContext } from "@/context/stable-context";
 import {
-  createContext,
   useContext,
   useState,
   useEffect,
@@ -114,7 +114,7 @@ interface MyPetsContextValue {
   loadingPets: boolean;
 }
 
-const MyPetsContext = createContext<MyPetsContextValue | null>(null);
+const MyPetsContext = stableContext<MyPetsContextValue>("MyPetsContext");
 
 export function MyPetsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
