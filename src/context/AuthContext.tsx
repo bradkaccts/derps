@@ -27,6 +27,7 @@ interface AuthContextValue {
   isSignedIn: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (patch: Partial<Pick<DerpsProfile, "display_name" | "location">>) => Promise<void>;
   /** Gated action helper — returns true when the action may proceed. */
   requireAuth: (reason?: string) => boolean;
   /** Reason copy for the sign-in sheet, or null when it is closed. */
