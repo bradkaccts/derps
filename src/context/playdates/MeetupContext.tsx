@@ -1,5 +1,16 @@
 import { stableContext } from "@/context/stable-context";
-import { useCallback, useContext, useMemo, type ReactNode } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { fireAndForget } from "@/lib/supabase-fire";
+import { useAuth } from "@/context/AuthContext";
+import { isRemoteMatchId } from "./MatchContext";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { isWithinCheckinWindow } from "@/lib/playdates/geo";
@@ -91,11 +102,43 @@ interface MeetupContextValue {
 
 const MeetupContext = stableContext<MeetupContextValue>("MeetupContext");
 
+interface MeetupRow {
+  id: string;
+  match_id: string;
+  venue_id: string;
+  proposed_by_user_id: string;
+  scheduled_start: string;
+  duration_minutes: number;
+  state: string;
+  checkin_a_at: string | null;
+  checkin_b_at: string | null;
+  recurrence_rule: string | null;
+}
+
+function rowToMeetup(row: MeetupRow): Meetup {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    venueId: row.venue_id,
+    proposedByUserId: row.proposed_by_user_id,
+    scheduledStart: row.scheduled_start,
+    durationMinutes: row.duration_minutes,
+    state: row.state as MeetupState,
+    checkinAAt: row.checkin_a_at,
+    checkinBAt: row.checkin_b_at,
+    recurrenceRule: row.recurrence_rule,
+  };
+}
+
 export function MeetupProvider({ children }: { children: ReactNode }) {
-  const [meetups, setMeetups] = usePersistentState<Meetup[]>(
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  const [localMeetups, setLocalMeetups] = usePersistentState<Meetup[]>(
     "derps.playdates.meetups",
     seededMeetups,
   );
+  const [remoteMeetups, setRemoteMeetups] = useState<Meetup[]>([]);
   const [feedback, setFeedback] = usePersistentState<MeetupFeedback[]>(
     "derps.playdates.feedback",
     [],
@@ -106,7 +149,87 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
   );
   const { addTrustSignal } = useSafety();
 
+  /* Real Derpdates live on the shared `meetups` table, so a proposal made by
+     one human shows up on the other human's account. RLS keeps a row visible
+     to the two people in the match and nobody else. */
+  const refreshRemoteMeetups = useCallback(async () => {
+    if (!userId) {
+      setRemoteMeetups([]);
+      return;
+    }
+    const { data } = await supabase
+      .from("meetups")
+      .select(
+        "id, match_id, venue_id, proposed_by_user_id, scheduled_start, duration_minutes, state, checkin_a_at, checkin_b_at, recurrence_rule",
+      )
+      .order("scheduled_start", { ascending: false })
+      .returns<MeetupRow[]>();
+    setRemoteMeetups((data ?? []).map(rowToMeetup));
+  }, [userId]);
+
+  useEffect(() => {
+    void refreshRemoteMeetups();
+  }, [refreshRemoteMeetups]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`derpdate-meetups-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetups" }, () => {
+        void refreshRemoteMeetups();
+      })
+      .subscribe();
+
+    const resync = () => {
+      if (document.visibilityState === "visible") void refreshRemoteMeetups();
+    };
+    document.addEventListener("visibilitychange", resync);
+    // Realtime is the fast path, not the guarantee — the poll makes it certain.
+    const poll = setInterval(resync, 8000);
+
+    return () => {
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", resync);
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, refreshRemoteMeetups]);
+
+  const meetups = useMemo(() => {
+    const seen = new Set(remoteMeetups.map((m) => m.id));
+    return [...remoteMeetups, ...localMeetups.filter((m) => !seen.has(m.id))];
+  }, [remoteMeetups, localMeetups]);
+
+  const isRemote = useCallback(
+    (meetupId: string) => remoteMeetups.some((m) => m.id === meetupId),
+    [remoteMeetups],
+  );
+
+  /** Applies a change to whichever store owns the meetup, and syncs the row. */
+  const patchMeetup = useCallback(
+    (
+      meetupId: string,
+      patch: Partial<Meetup>,
+      row: {
+        state?: string;
+        checkin_a_at?: string;
+        checkin_b_at?: string;
+        scheduled_start?: string;
+      },
+    ) => {
+      if (isRemote(meetupId)) {
+        setRemoteMeetups((prev) =>
+          prev.map((m) => (m.id === meetupId ? { ...m, ...patch } : m)),
+        );
+        fireAndForget(supabase.from("meetups").update(row).eq("id", meetupId), "meetup update");
+        return;
+      }
+      setLocalMeetups((prev) => prev.map((m) => (m.id === meetupId ? { ...m, ...patch } : m)));
+    },
+    [isRemote, setLocalMeetups],
+  );
+
   const getMeetup = useCallback((id: string) => meetups.find((m) => m.id === id), [meetups]);
+
 
   const meetupsForMatch = useCallback(
     (matchId: string) =>
@@ -130,11 +253,13 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
 
   const proposeMeetup = useCallback(
     (input: ProposeMeetupInput) => {
+      // A Derpdate on a real match is a shared row, so both humans see it.
+      const shared = isRemoteMatchId(input.matchId) && Boolean(userId);
       const meetup: Meetup = {
-        id: `meetup-${Date.now()}`,
+        id: shared ? crypto.randomUUID() : `meetup-${Date.now()}`,
         matchId: input.matchId,
         venueId: input.venueId,
-        proposedByUserId: currentUser.id,
+        proposedByUserId: shared ? userId! : currentUser.id,
         scheduledStart: input.scheduledStart,
         durationMinutes: input.durationMinutes,
         state: "Proposed",
@@ -142,7 +267,23 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
         checkinBAt: null,
         recurrenceRule: null,
       };
-      setMeetups((prev) => [meetup, ...prev]);
+      if (shared) {
+        setRemoteMeetups((prev) => [meetup, ...prev]);
+        fireAndForget(
+          supabase.from("meetups").insert({
+            id: meetup.id,
+            match_id: meetup.matchId,
+            venue_id: meetup.venueId,
+            proposed_by_user_id: meetup.proposedByUserId,
+            scheduled_start: meetup.scheduledStart,
+            duration_minutes: meetup.durationMinutes,
+            state: meetup.state,
+          }),
+          "meetup insert",
+        );
+      } else {
+        setLocalMeetups((prev) => [meetup, ...prev]);
+      }
       playdateEvents.publish({
         type: "meetup.proposed",
         meetupId: meetup.id,
@@ -152,14 +293,14 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
       });
       return meetup;
     },
-    [setMeetups],
+    [setLocalMeetups, userId],
   );
 
   const setState = useCallback(
     (meetupId: string, state: MeetupState) => {
-      setMeetups((prev) => prev.map((m) => (m.id === meetupId ? { ...m, state } : m)));
+      patchMeetup(meetupId, { state }, { state });
     },
-    [setMeetups],
+    [patchMeetup],
   );
 
   const respondToMeetup = useCallback(
@@ -201,14 +342,14 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
     (meetupId: string, party: "a" | "b", withinGeofence: boolean) => {
       if (!withinGeofence) return;
       const at = new Date().toISOString();
-      setMeetups((prev) =>
-        prev.map((m) =>
-          m.id === meetupId ? { ...m, [party === "a" ? "checkinAAt" : "checkinBAt"]: at } : m,
-        ),
+      patchMeetup(
+        meetupId,
+        party === "a" ? { checkinAAt: at } : { checkinBAt: at },
+        party === "a" ? { checkin_a_at: at } : { checkin_b_at: at },
       );
       playdateEvents.publish({ type: "meetup.checkin", meetupId, party, withinGeofence, at });
     },
-    [setMeetups],
+    [patchMeetup],
   );
 
   const canCheckIn = useCallback(
