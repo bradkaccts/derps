@@ -495,10 +495,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
             return;
           }
           const saved = rowToMessage(data);
+          // Mine: never let a later re-pull mistake my own row for an arrival.
+          seenMessageIds.current.add(saved.id);
           setRemoteThreads((prev) => ({
             ...prev,
-            [matchId]: (prev[matchId] ?? []).map((m) => (m.id === message.id ? saved : m)),
+            [matchId]: mergeThread(
+              (prev[matchId] ?? []).filter((m) => m.id !== message.id),
+              [saved],
+            ),
           }));
+
           if (isFirst) {
 
             await supabase
