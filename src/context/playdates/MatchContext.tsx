@@ -288,6 +288,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         { event: "INSERT", schema: "public", table: "match_messages" },
         (payload) => {
           const message = rowToMessage(payload.new as MessageRow);
+          console.log("[derpdate-realtime] message", message.id, message.senderUserId);
           setRemoteThreads((prev) => {
             const existing = prev[message.matchId] ?? [];
             if (existing.some((m) => m.id === message.id)) return prev;
@@ -299,6 +300,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         },
       )
       .subscribe((status) => {
+        console.log("[derpdate-realtime]", status);
         if (cancelled) return;
         if (status === "SUBSCRIBED") {
           // Catch anything the partner sent while the socket was down.
