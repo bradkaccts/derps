@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { scanMessage } from "@/lib/playdates/safety-text";
@@ -114,7 +115,7 @@ interface MatchContextValue {
   scanDraft: typeof scanMessage;
 }
 
-const MatchContext = createContext<MatchContextValue | null>(null);
+const MatchContext = stableContext<MatchContextValue>("MatchContext");
 
 export function MatchProvider({ children }: { children: ReactNode }) {
   const [matches, setMatches] = usePersistentState<Match[]>(

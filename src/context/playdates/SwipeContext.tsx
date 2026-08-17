@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useCallback, useContext, useMemo, type ReactNode } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { type FeedCard, type Impression, type Swipe, type SwipeDirection } from "@/lib/playdates/types";
@@ -29,7 +30,7 @@ interface SwipeContextValue {
   resetSwipes: () => void;
 }
 
-const SwipeContext = createContext<SwipeContextValue | null>(null);
+const SwipeContext = stableContext<SwipeContextValue>("SwipeContext");
 
 export function SwipeProvider({ children }: { children: ReactNode }) {
   const [swipes, setSwipes, resetSwipes] = usePersistentState<Swipe[]>("derps.playdates.swipes", []);

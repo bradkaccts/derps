@@ -1,5 +1,5 @@
+import { stableContext } from "@/context/stable-context";
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -35,7 +35,7 @@ interface AuthContextValue {
   closeAuthPrompt: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = stableContext<AuthContextValue>("AuthContext");
 
 /** Display name captured on the sign-up screen, applied on first sign-in. */
 export const PENDING_NAME_KEY = "derps.pendingDisplayName";

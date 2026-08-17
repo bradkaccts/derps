@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useContext, useState, ReactNode, useCallback } from "react";
 
 export type PlaydateStatus = "requested" | "accepted" | "scheduled" | "completed" | "declined";
 
@@ -49,7 +50,7 @@ interface PlaydateContextValue {
   acceptedCount: number;
 }
 
-const PlaydateContext = createContext<PlaydateContextValue | null>(null);
+const PlaydateContext = stableContext<PlaydateContextValue>("PlaydateContext");
 
 export function PlaydateProvider({ children }: { children: ReactNode }) {
   const [requests, setRequests] = useState<PlaydateRequest[]>([]);

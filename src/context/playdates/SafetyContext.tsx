@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { stableContext } from "@/context/stable-context";
+import { useCallback, useContext, useMemo, type ReactNode } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import {
@@ -28,7 +29,7 @@ interface SafetyContextValue {
   meetupProposalsRestricted: boolean;
 }
 
-const SafetyContext = createContext<SafetyContextValue | null>(null);
+const SafetyContext = stableContext<SafetyContextValue>("SafetyContext");
 
 export function SafetyProvider({ children }: { children: ReactNode }) {
   const [blocks, setBlocks] = usePersistentState<Block[]>("derps.playdates.blocks", []);
