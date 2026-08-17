@@ -96,12 +96,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
+                <Link to="/playdates/history">
+                  <History className="h-4 w-4" />
+                  Swipe History
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full gap-2 font-semibold justify-start">
                 <Link to="/playdates/safety">
                   <LifeBuoy className="h-4 w-4" />
                   Safety Center
                 </Link>
               </Button>
             </div>
+
 
             {FEATURES.adoption && (
               <div className="mt-auto pt-4">
