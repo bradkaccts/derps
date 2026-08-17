@@ -7,7 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import { usePersistentState } from "@/hooks/use-persistent-state";
+
 import { supabase } from "@/integrations/supabase/client";
 import { fireAndForget } from "@/lib/supabase-fire";
 import { useAuth } from "@/context/AuthContext";
