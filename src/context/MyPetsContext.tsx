@@ -1,12 +1,21 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { type Pet, type Species, type VibeTag } from "@/data/mock-pets";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
+import { type Pet, type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export interface MyPet extends Pet {
   isOwned: true;
 }
 
-// Default pet for Felix the adopter
-const felixPet: MyPet = {
+// Guest demo Derp — signed-out visitors still get the full Derpdate experience.
+const guestPet: MyPet = {
   id: "my-pet-1",
   name: "Nugget",
   species: "dog",
@@ -30,46 +39,176 @@ const felixPet: MyPet = {
   isOwned: true,
 };
 
+type PetRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  species: string;
+  breed: string;
+  age: string;
+  age_category: string;
+  gender: string;
+  vibes: string[];
+  bio: string;
+  fun_fact: string;
+  location: string;
+  photos: string[];
+  health_verified: boolean;
+  created_at: string;
+};
+
+type NewPet = Omit<
+  MyPet,
+  "id" | "isOwned" | "status" | "adoptionFee" | "rehomerId" | "createdAt" | "rehomingReason"
+>;
+
+function rowToPet(row: PetRow): MyPet {
+  return {
+    id: row.id,
+    name: row.name,
+    species: row.species as Species,
+    breed: row.breed,
+    age: row.age,
+    ageCategory: row.age_category as AgeCategory,
+    gender: row.gender as "male" | "female",
+    vibes: (row.vibes ?? []) as VibeTag[],
+    bio: row.bio,
+    funFact: row.fun_fact,
+    rehomingReason: "",
+    location: row.location,
+    distanceKm: 0,
+    photos: row.photos ?? [],
+    healthVerified: row.health_verified,
+    adoptionFee: 0,
+    status: "adopted",
+    rehomerId: row.user_id,
+    createdAt: row.created_at.slice(0, 10),
+    isOwned: true,
+  };
+}
+
+function petToRow(pet: NewPet, userId: string) {
+  return {
+    user_id: userId,
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed ?? "",
+    age: pet.age ?? "",
+    age_category: pet.ageCategory ?? "young",
+    gender: pet.gender ?? "male",
+    vibes: pet.vibes ?? [],
+    bio: pet.bio ?? "",
+    fun_fact: pet.funFact ?? "",
+    location: pet.location ?? "",
+    photos: pet.photos ?? [],
+    health_verified: pet.healthVerified ?? false,
+  };
+}
+
 interface MyPetsContextValue {
   myPets: MyPet[];
   activePet: MyPet | null;
   setActivePetId: (id: string) => void;
-  addMyPet: (pet: Omit<MyPet, "id" | "isOwned" | "status" | "adoptionFee" | "rehomerId" | "createdAt" | "rehomingReason">) => void;
+  addMyPet: (pet: NewPet) => void;
   removeMyPet: (id: string) => void;
+  loadingPets: boolean;
 }
 
 const MyPetsContext = createContext<MyPetsContextValue | null>(null);
 
 export function MyPetsProvider({ children }: { children: ReactNode }) {
-  const [myPets, setMyPets] = useState<MyPet[]>([felixPet]);
-  const [activePetId, setActivePetId] = useState<string>(felixPet.id);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [myPets, setMyPets] = useState<MyPet[]>([guestPet]);
+  const [activePetId, setActivePetId] = useState<string>(guestPet.id);
+  const [loadingPets, setLoadingPets] = useState(false);
+
+  // Load the account's Derps and, on first sign-in, carry the guest Derp up.
+  useEffect(() => {
+    if (!userId) {
+      setMyPets([guestPet]);
+      setActivePetId(guestPet.id);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPets(true);
+    void (async () => {
+      const { data, error } = await supabase
+        .from("pets")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        setLoadingPets(false);
+        return;
+      }
+      let rows = (data ?? []) as PetRow[];
+      if (rows.length === 0) {
+        const { data: created } = await supabase
+          .from("pets")
+          .insert(petToRow(guestPet, userId))
+          .select("*")
+          .single();
+        if (created) rows = [created as PetRow];
+      }
+      if (cancelled) return;
+      const pets = rows.map(rowToPet);
+      setMyPets(pets);
+      setActivePetId(pets[0]?.id ?? "");
+      setLoadingPets(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const activePet = myPets.find((p) => p.id === activePetId) ?? myPets[0] ?? null;
 
   const addMyPet = useCallback(
-    (pet: Omit<MyPet, "id" | "isOwned" | "status" | "adoptionFee" | "rehomerId" | "createdAt" | "rehomingReason">) => {
-      const newPet: MyPet = {
-        ...pet,
-        id: `my-pet-${Date.now()}`,
-        isOwned: true,
-        status: "adopted",
-        adoptionFee: 0,
-        rehomerId: "u1",
-        createdAt: new Date().toISOString().split("T")[0],
-        rehomingReason: "",
-      };
-      setMyPets((prev) => [...prev, newPet]);
-      setActivePetId(newPet.id);
+    (pet: NewPet) => {
+      if (!userId) {
+        const local: MyPet = {
+          ...pet,
+          id: `my-pet-${Date.now()}`,
+          isOwned: true,
+          status: "adopted",
+          adoptionFee: 0,
+          rehomerId: "guest",
+          createdAt: new Date().toISOString().split("T")[0],
+          rehomingReason: "",
+        };
+        setMyPets((prev) => [...prev, local]);
+        setActivePetId(local.id);
+        return;
+      }
+      void (async () => {
+        const { data } = await supabase
+          .from("pets")
+          .insert(petToRow(pet, userId))
+          .select("*")
+          .single();
+        if (!data) return;
+        const created = rowToPet(data as PetRow);
+        setMyPets((prev) => [...prev, created]);
+        setActivePetId(created.id);
+      })();
     },
-    []
+    [userId],
   );
 
-  const removeMyPet = useCallback((id: string) => {
-    setMyPets((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const removeMyPet = useCallback(
+    (id: string) => {
+      setMyPets((prev) => prev.filter((p) => p.id !== id));
+      if (userId) void supabase.from("pets").delete().eq("id", id).eq("user_id", userId);
+    },
+    [userId],
+  );
 
   return (
-    <MyPetsContext.Provider value={{ myPets, activePet, setActivePetId, addMyPet, removeMyPet }}>
+    <MyPetsContext.Provider
+      value={{ myPets, activePet, setActivePetId, addMyPet, removeMyPet, loadingPets }}
+    >
       {children}
     </MyPetsContext.Provider>
   );

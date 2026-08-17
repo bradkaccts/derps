@@ -11,6 +11,7 @@ import {
   type SwipeDirection,
 } from "@/lib/playdates/types";
 import { useMyPets, type MyPet } from "@/context/MyPetsContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   useMatches,
   useMeetups,
@@ -83,6 +84,7 @@ export interface SwipeOutcome {
  */
 export function usePlaydateFeed() {
   const { activePet, myPets, setActivePetId } = useMyPets();
+  const { requireAuth } = useAuth();
   const personality = usePetPersonality();
   const swipeStore = useSwipes();
   const matchStore = useMatches();
@@ -153,6 +155,19 @@ export function usePlaydateFeed() {
     (card: FeedCard, direction: SwipeDirection): SwipeOutcome => {
       if (!actor) return { matched: false, matchId: null, limitReached: false };
 
+      // Passing is free for guests; a heart or a boop reaches another human,
+      // so it needs an account (Tier 0).
+      if (
+        direction !== "pass" &&
+        !requireAuth(
+          direction === "boop"
+            ? "Boops go straight to another Derp's human."
+            : "Hearts are saved to your account so we can find your match.",
+        )
+      ) {
+        return { matched: false, matchId: null, limitReached: false };
+      }
+
       if (direction === "like" && swipeStore.likesRemaining(actor.pet.id) === 0) {
         return { matched: false, matchId: null, limitReached: true };
       }
@@ -180,7 +195,7 @@ export function usePlaydateFeed() {
       const match = matchStore.createMatch(actor.pet.id, card.petId);
       return { matched: true, matchId: match.id, limitReached: false };
     },
-    [actor, pool, swipeStore, matchStore],
+    [actor, pool, swipeStore, matchStore, requireAuth],
   );
 
   const undo = useCallback(() => {
