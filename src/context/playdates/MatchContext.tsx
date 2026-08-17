@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -304,7 +305,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         { event: "INSERT", schema: "public", table: "match_messages" },
         (payload) => {
           const message = rowToMessage(payload.new as MessageRow);
-          console.log("[derpdate-realtime] message", message.id, message.senderUserId);
+          if (seenMessageIds.current.has(message.id)) return;
+          seenMessageIds.current.add(message.id);
           setRemoteThreads((prev) => {
             const existing = prev[message.matchId] ?? [];
             if (existing.some((m) => m.id === message.id)) return prev;
@@ -316,7 +318,6 @@ export function MatchProvider({ children }: { children: ReactNode }) {
         },
       )
       .subscribe((status) => {
-        console.log("[derpdate-realtime]", status);
         if (cancelled) return;
         if (status === "SUBSCRIBED") {
           // Catch anything the partner sent while the socket was down.
@@ -337,9 +338,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", resync);
     window.addEventListener("online", resync);
 
+    /* Realtime is the fast path, not the guarantee: a websocket can be blocked
+       by a network or drop a row silently. This poll makes delivery certain. */
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshRemoteMatches();
+    }, 8000);
+
     return () => {
       cancelled = true;
       if (retry) clearTimeout(retry);
+      clearInterval(poll);
       document.removeEventListener("visibilitychange", resync);
       window.removeEventListener("online", resync);
       void supabase.removeChannel(channel);
