@@ -53,6 +53,7 @@ const App = () => (
                           {/* Release 1 is Derpdates-first: the feed is home. */}
                           <Route path="/" element={<PlaydatesFeed />} />
                           <Route path="/auth" element={<Auth />} />
+                          <Route path="/account" element={<Account />} />
                           <Route
                             path="/inbox"
                             element={
