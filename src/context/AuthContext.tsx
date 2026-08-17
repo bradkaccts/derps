@@ -154,11 +154,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSignedIn: !!user,
       signOut,
       refreshProfile,
+      updateProfile,
       requireAuth,
       authPrompt,
       closeAuthPrompt: () => setAuthPrompt(null),
     }),
-    [user, session, profile, loading, signOut, refreshProfile, requireAuth, authPrompt],
+    [
+      user,
+      session,
+      profile,
+      loading,
+      signOut,
+      refreshProfile,
+      updateProfile,
+      requireAuth,
+      authPrompt,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
