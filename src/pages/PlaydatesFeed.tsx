@@ -62,10 +62,21 @@ const PlaydatesFeed = () => {
         return;
       }
 
+      // A real Derp's human has to answer before it's a match.
+      if (outcome.sentToRealDerp) {
+        toast.success(
+          direction === "boop"
+            ? `Boop sent to ${card.name} ✨ We'll ping you if they boop back.`
+            : `Heart sent to ${card.name} 💛 We'll ping you if it's mutual.`,
+        );
+        return;
+      }
+
       if (direction === "boop") toast.success(`Boop sent to ${card.name} ✨`);
     },
     [swipe],
   );
+
 
   /* ---------------- Onboarding gates (Stage A, §4.1) ---------------- */
 
