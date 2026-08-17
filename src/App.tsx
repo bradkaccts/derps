@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AuthProvider } from "@/context/AuthContext";
+import { AuthGateSheet } from "@/components/auth/AuthGateSheet";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { PreferencesProvider } from "@/context/PreferencesContext";
 import { MessagingProvider } from "@/context/MessagingContext";
@@ -13,6 +15,7 @@ import { PlaydateProvider } from "@/context/PlaydateContext";
 import { PlaydatesProvider } from "@/context/playdates/PlaydatesProvider";
 import { FEATURES } from "@/config/features";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import PlaydatesFeed from "./pages/PlaydatesFeed";
 import PlaydateQuiz from "./pages/PlaydateQuiz";
 import PlaydateMatches from "./pages/PlaydateMatches";
@@ -35,6 +38,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <PreferencesProvider>
           <FavoritesProvider>
             <MessagingProvider>
@@ -46,6 +50,7 @@ const App = () => (
                         <Routes>
                           {/* Release 1 is Derpdates-first: the feed is home. */}
                           <Route path="/" element={<PlaydatesFeed />} />
+                          <Route path="/auth" element={<Auth />} />
                           <Route path="/inbox" element={<Inbox />} />
                           <Route path="/my-derps" element={<MyDerps />} />
                           <Route path="/profile" element={<Profile />} />
@@ -78,6 +83,8 @@ const App = () => (
             </MessagingProvider>
           </FavoritesProvider>
         </PreferencesProvider>
+        <AuthGateSheet />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
