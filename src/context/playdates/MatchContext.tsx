@@ -207,6 +207,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const [remoteMatches, setRemoteMatches] = useState<Match[]>([]);
   const [remoteThreads, setRemoteThreads] = useState<Record<string, PlaydateMessage[]>>({});
   const [newRemoteMatch, setNewRemoteMatch] = useState<Match | null>(null);
+  const [incomingMessage, setIncomingMessage] = useState<PlaydateMessage | null>(null);
+
 
   /* ---------------- Real matches and threads ---------------- */
 
