@@ -56,8 +56,10 @@ export function MeetupCard({
   onPlaydateAgain: () => void;
   className?: string;
 }) {
+  const { user } = useAuth();
   const venue = mockVenues.find((v) => v.id === meetup.venueId);
-  const proposedByMe = meetup.proposedByUserId === currentUser.id;
+  // Shared Derpdates carry a real account id; the demo population uses the mock user.
+  const proposedByMe = meetup.proposedByUserId === (user?.id ?? currentUser.id);
   const myCheckin = proposedByMe ? meetup.checkinAAt : meetup.checkinBAt;
   const theirCheckin = proposedByMe ? meetup.checkinBAt : meetup.checkinAAt;
   const checkinOpen = meetup.state === "Accepted" && isWithinCheckinWindow(meetup.scheduledStart);
