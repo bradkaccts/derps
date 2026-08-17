@@ -11,6 +11,7 @@ import {
   type SwipeDirection,
 } from "@/lib/playdates/types";
 import { useMyPets, type MyPet } from "@/context/MyPetsContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   useMatches,
   useMeetups,
@@ -83,6 +84,7 @@ export interface SwipeOutcome {
  */
 export function usePlaydateFeed() {
   const { activePet, myPets, setActivePetId } = useMyPets();
+  const { requireAuth } = useAuth();
   const personality = usePetPersonality();
   const swipeStore = useSwipes();
   const matchStore = useMatches();
