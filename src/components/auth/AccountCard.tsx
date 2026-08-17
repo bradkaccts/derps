@@ -22,18 +22,29 @@ export function AccountCard() {
 
   if (!isSignedIn) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="space-y-3 p-4 text-center">
-          <PawPrint className="mx-auto h-8 w-8 text-primary" />
+      <Card className="rounded-3xl border-2 border-dashed">
+        <CardContent className="space-y-3 p-5 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl">
+            🐾
+          </span>
           <div>
-            <p className="font-extrabold text-foreground">You're browsing as a guest</p>
+            <p className="text-lg font-extrabold text-foreground">You're browsing as a guest</p>
             <p className="text-sm text-muted-foreground">
               Sign in to save your Derps, send boops, and keep your matches on every device.
             </p>
           </div>
-          <Button asChild className="btn-bouncy w-full font-bold">
-            <Link to="/auth">Sign in — no password needed</Link>
-          </Button>
+          <div className="space-y-2">
+            <Button asChild className="btn-bouncy h-12 w-full rounded-2xl text-base font-extrabold">
+              <Link to="/auth">Sign in — no password needed</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="btn-bouncy h-12 w-full rounded-2xl border-2 text-base font-extrabold"
+            >
+              <Link to="/auth">Create an account</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
