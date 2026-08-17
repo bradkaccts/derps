@@ -7,6 +7,8 @@ import {
   type ReactNode,
 } from "react";
 import { type Pet, type Species, type VibeTag, type AgeCategory } from "@/data/mock-pets";
+import { LAUNCH_METRO } from "@/lib/playdates/remote-pets";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
