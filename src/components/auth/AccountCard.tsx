@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, PawPrint, ShieldCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,21 +19,33 @@ const TIERS = [
 export function AccountCard() {
   const { user, profile, isSignedIn, signOut } = useAuth();
   const tier = profile?.verification_tier ?? 0;
+  const onAccountPage = useLocation().pathname === "/account";
 
   if (!isSignedIn) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="space-y-3 p-4 text-center">
-          <PawPrint className="mx-auto h-8 w-8 text-primary" />
+      <Card className="rounded-3xl border-2 border-dashed">
+        <CardContent className="space-y-3 p-5 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl">
+            🐾
+          </span>
           <div>
-            <p className="font-extrabold text-foreground">You're browsing as a guest</p>
+            <p className="text-lg font-extrabold text-foreground">You're browsing as a guest</p>
             <p className="text-sm text-muted-foreground">
               Sign in to save your Derps, send boops, and keep your matches on every device.
             </p>
           </div>
-          <Button asChild className="btn-bouncy w-full font-bold">
-            <Link to="/auth">Sign in — no password needed</Link>
-          </Button>
+          <div className="space-y-2">
+            <Button asChild className="btn-bouncy h-12 w-full rounded-2xl text-base font-extrabold">
+              <Link to="/auth">Sign in — no password needed</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="btn-bouncy h-12 w-full rounded-2xl border-2 text-base font-extrabold"
+            >
+              <Link to="/auth">Create an account</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -42,8 +54,8 @@ export function AccountCard() {
   const name = profile?.display_name || user?.email?.split("@")[0] || "Derp human";
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-4">
+    <Card className="rounded-3xl border-2">
+      <CardContent className="space-y-4 p-5">
         <div className="flex items-center gap-3">
           {profile?.avatar_url ? (
             <img
@@ -66,10 +78,16 @@ export function AccountCard() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Trust score</span>
-          <span className="font-bold text-primary">{profile?.trust_score ?? 50}/100</span>
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-3 py-2 text-sm">
+          <span className="font-semibold text-muted-foreground">Trust score</span>
+          <span className="font-extrabold text-primary">{profile?.trust_score ?? 50}/100</span>
         </div>
+
+        {!onAccountPage && (
+          <Button asChild variant="outline" className="w-full rounded-2xl font-bold">
+            <Link to="/account">Manage my account</Link>
+          </Button>
+        )}
 
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">

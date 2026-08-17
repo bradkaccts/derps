@@ -27,6 +27,7 @@ interface AuthContextValue {
   isSignedIn: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (patch: Partial<Pick<DerpsProfile, "display_name" | "location">>) => Promise<void>;
   /** Gated action helper — returns true when the action may proceed. */
   requireAuth: (reason?: string) => boolean;
   /** Reason copy for the sign-in sheet, or null when it is closed. */
@@ -35,6 +36,9 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/** Display name captured on the sign-up screen, applied on first sign-in. */
+export const PENDING_NAME_KEY = "derps.pendingDisplayName";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -68,7 +72,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("id, display_name, avatar_url, location, verification_tier, trust_score")
       .eq("id", userId)
       .maybeSingle();
-    setProfile((data as DerpsProfile) ?? null);
+
+    let next = (data as DerpsProfile) ?? null;
+
+    // Apply the name typed on the sign-up screen, once.
+    let pendingName: string | null = null;
+    try {
+      pendingName = localStorage.getItem(PENDING_NAME_KEY);
+    } catch {
+      pendingName = null;
+    }
+    if (pendingName) {
+      try {
+        localStorage.removeItem(PENDING_NAME_KEY);
+      } catch {
+        /* ignore */
+      }
+      if (next && !next.display_name) {
+        const { data: updated } = await supabase
+          .from("profiles")
+          .update({ display_name: pendingName })
+          .eq("id", userId)
+          .select("id, display_name, avatar_url, location, verification_tier, trust_score")
+          .maybeSingle();
+        if (updated) next = updated as DerpsProfile;
+      }
+    }
+
+    setProfile(next);
   }, []);
 
   useEffect(() => {
@@ -82,6 +113,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (user) await loadProfile(user.id);
   }, [user, loadProfile]);
+
+  const updateProfile = useCallback(
+    async (patch: Partial<Pick<DerpsProfile, "display_name" | "location">>) => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(patch)
+        .eq("id", user.id)
+        .select("id, display_name, avatar_url, location, verification_tier, trust_score")
+        .maybeSingle();
+      if (error) throw error;
+      if (data) setProfile(data as DerpsProfile);
+    },
+    [user],
+  );
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -108,11 +154,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSignedIn: !!user,
       signOut,
       refreshProfile,
+      updateProfile,
       requireAuth,
       authPrompt,
       closeAuthPrompt: () => setAuthPrompt(null),
     }),
-    [user, session, profile, loading, signOut, refreshProfile, requireAuth, authPrompt],
+    [
+      user,
+      session,
+      profile,
+      loading,
+      signOut,
+      refreshProfile,
+      updateProfile,
+      requireAuth,
+      authPrompt,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
