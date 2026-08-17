@@ -27,9 +27,19 @@ export interface FilterInput {
   now?: Date;
 }
 
-function vaccinationCurrent(pet: ScoredPet, now: Date): boolean {
+/**
+ * A *missing* attestation is a brand-new Derp that has not been through
+ * onboarding yet — it stays discoverable and is flagged as unverified on the
+ * card. A *lapsed* attestation is a stale record and still excludes the pair.
+ */
+function vaccinationLapsed(pet: ScoredPet, now: Date): boolean {
   if (!pet.pet.vaccination) return false;
-  return new Date(pet.pet.vaccination.expiresAt).getTime() > now.getTime();
+  return new Date(pet.pet.vaccination.expiresAt).getTime() <= now.getTime();
+}
+
+/** True when a Derp has no attestation on file yet (new account, pre-approval). */
+export function vaccinationPending(pet: ScoredPet): boolean {
+  return !pet.pet.vaccination;
 }
 
 function sharesGuardingTrigger(a: GuardingTrigger[], b: GuardingTrigger[]): boolean {
