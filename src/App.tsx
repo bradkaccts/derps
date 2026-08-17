@@ -23,6 +23,8 @@ import PlaydateQuiz from "./pages/PlaydateQuiz";
 import PlaydateMatches from "./pages/PlaydateMatches";
 import PlaydateVenues from "./pages/PlaydateVenues";
 import PlaydateSafety from "./pages/PlaydateSafety";
+import PlaydateHistory from "./pages/PlaydateHistory";
+
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
 import MyDerps from "./pages/MyDerps";
@@ -96,7 +98,9 @@ const App = () => (
                             }
                           />
                           <Route path="/playdates/venues" element={<PlaydateVenues />} />
+                          <Route path="/playdates/history" element={<PlaydateHistory />} />
                           <Route path="/playdates/safety" element={<PlaydateSafety />} />
+
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </AppLayout>
