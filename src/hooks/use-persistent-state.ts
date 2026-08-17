@@ -142,25 +142,30 @@ export function usePersistentState<T>(key: string, initialValue: T) {
       pendingRef.current = false;
       void push(userId, valueRef.current);
     };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", () => {
+    const onVisibility = () => {
       if (document.visibilityState === "hidden") flush();
-    });
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
       flush();
     };
   }, [userId, push]);
 
   const reset = useCallback(() => {
     setValue(initialValue);
+    pendingRef.current = false;
     try {
       window.localStorage.removeItem(keyRef.current);
     } catch {
       /* no-op */
     }
+    // Clearing has to reach the account too, or the next load pulls it back.
+    if (userId && hydratedFor.current === userId) void push(userId, initialValue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId, push]);
 
   return [value, setValue, reset] as const;
 }
