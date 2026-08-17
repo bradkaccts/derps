@@ -24,6 +24,8 @@ import PlaydateMatches from "./pages/PlaydateMatches";
 import PlaydateVenues from "./pages/PlaydateVenues";
 import PlaydateSafety from "./pages/PlaydateSafety";
 import PlaydateHistory from "./pages/PlaydateHistory";
+import { IncomingMessageNotifier } from "./components/playdates/IncomingMessageNotifier";
+
 
 import PetProfile from "./pages/PetProfile";
 import Inbox from "./pages/Inbox";
