@@ -206,7 +206,16 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
 
   /** Applies a change to whichever store owns the meetup, and syncs the row. */
   const patchMeetup = useCallback(
-    (meetupId: string, patch: Partial<Meetup>, row: Record<string, unknown>) => {
+    (
+      meetupId: string,
+      patch: Partial<Meetup>,
+      row: {
+        state?: string;
+        checkin_a_at?: string;
+        checkin_b_at?: string;
+        scheduled_start?: string;
+      },
+    ) => {
       if (isRemote(meetupId)) {
         setRemoteMeetups((prev) =>
           prev.map((m) => (m.id === meetupId ? { ...m, ...patch } : m)),
