@@ -2,6 +2,8 @@ import { useState } from "react";
 import { currentUser } from "@/data/mock-users";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DiscoveryCard } from "@/components/playdates/DiscoveryCard";
+
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
