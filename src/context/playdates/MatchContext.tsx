@@ -9,6 +9,7 @@ import {
 } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { supabase } from "@/integrations/supabase/client";
+import { fireAndForget } from "@/lib/supabase-fire";
 import { useAuth } from "@/context/AuthContext";
 import { playdateEvents } from "@/lib/playdates/analytics";
 import { scanMessage } from "@/lib/playdates/safety-text";
@@ -484,7 +485,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     (matchId: string, state: MatchState) => {
       if (isRemoteMatchId(matchId)) {
         setRemoteMatches((prev) => prev.map((m) => (m.id === matchId ? { ...m, state } : m)));
-        void supabase.from("matches").update({ state }).eq("id", matchId);
+        fireAndForget(supabase.from("matches").update({ state }).eq("id", matchId), "match state");
         return;
       }
       setMatches((prev) => prev.map((m) => (m.id === matchId ? { ...m, state } : m)));
@@ -506,14 +507,17 @@ export function MatchProvider({ children }: { children: ReactNode }) {
           const next = prev.map((m) => (m.id === matchId ? bump(m) : m));
           const updated = next.find((m) => m.id === matchId);
           if (updated) {
-            void supabase
-              .from("matches")
-              .update({
-                meetup_count: updated.meetupCount,
-                state: updated.state,
-                expires_at: updated.expiresAt,
-              })
-              .eq("id", matchId);
+            fireAndForget(
+              supabase
+                .from("matches")
+                .update({
+                  meetup_count: updated.meetupCount,
+                  state: updated.state,
+                  expires_at: updated.expiresAt,
+                })
+                .eq("id", matchId),
+              "meetup count",
+            );
           }
           return next;
         });
@@ -535,7 +539,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       setRemoteMatches((prev) => {
         const affected = prev.filter((m) => ids.has(m.petAId) || ids.has(m.petBId));
         affected.forEach((m) => {
-          void supabase.from("matches").update({ state: "Blocked" }).eq("id", m.id);
+          fireAndForget(supabase.from("matches").update({ state: "Blocked" }).eq("id", m.id), "block match");
         });
         return prev.map((m) =>
           ids.has(m.petAId) || ids.has(m.petBId) ? { ...m, state: "Blocked" as MatchState } : m,

@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { MapPin, MessageCircle, Sparkles } from "lucide-react";
 import { useMyPets } from "@/context/MyPetsContext";
 import { useMatches } from "@/context/playdates/PlaydatesProvider";
-import { findPlaydatePet, ownerName } from "@/data/mock-playdate-pets";
+import { ownerName } from "@/data/mock-playdate-pets";
+import { usePetLookup } from "@/hooks/use-pet-lookup";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DerpyEmpty } from "@/components/ui/derpy-states";
@@ -16,19 +17,20 @@ import { cn } from "@/lib/utils";
 const MyDerps = () => {
   const { activePet } = useMyPets();
   const { matchesForPet, partnerPetId, getThread } = useMatches();
+  const lookupPet = usePetLookup();
 
   const friends = useMemo(() => {
     if (!activePet) return [];
     return matchesForPet(activePet.id)
       .filter((m) => m.state === "Active" || m.state === "Pals")
       .map((match) => {
-        const partner = findPlaydatePet(partnerPetId(match, activePet.id));
+        const partner = lookupPet(partnerPetId(match, activePet.id));
         const thread = getThread(match.id);
         return { match, partner, lastMessage: thread[thread.length - 1] };
       })
       .filter((row) => row.partner)
       .sort((a, b) => Number(b.match.state === "Pals") - Number(a.match.state === "Pals"));
-  }, [activePet, matchesForPet, partnerPetId, getThread]);
+  }, [activePet, matchesForPet, partnerPetId, getThread, lookupPet]);
 
   if (!activePet) {
     return (

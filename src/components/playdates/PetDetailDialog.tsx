@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CompatibilityMeter } from "./CompatibilityMeter";
 import { PLAY_STYLE_LABELS, LIFE_STAGE_LABELS, energyLabel, sociabilityLabel } from "./trait-labels";
-import { findPlaydatePet } from "@/data/mock-playdate-pets";
+import { usePetLookup } from "@/hooks/use-pet-lookup";
 import { type FeedCard, type SwipeDirection } from "@/lib/playdates/types";
 
 /**
@@ -29,8 +29,9 @@ export function PetDetailDialog({
   onOpenChange: (open: boolean) => void;
   onSwipe: (card: FeedCard, direction: SwipeDirection) => void;
 }) {
+  const lookupPet = usePetLookup();
   if (!card) return null;
-  const pet = findPlaydatePet(card.petId);
+  const pet = lookupPet(card.petId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
