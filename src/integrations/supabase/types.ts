@@ -109,6 +109,59 @@ export type Database = {
           },
         ]
       }
+      meetups: {
+        Row: {
+          checkin_a_at: string | null
+          checkin_b_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          match_id: string
+          proposed_by_user_id: string
+          recurrence_rule: string | null
+          scheduled_start: string
+          state: string
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          checkin_a_at?: string | null
+          checkin_b_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          match_id: string
+          proposed_by_user_id: string
+          recurrence_rule?: string | null
+          scheduled_start: string
+          state?: string
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          checkin_a_at?: string | null
+          checkin_b_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          match_id?: string
+          proposed_by_user_id?: string
+          recurrence_rule?: string | null
+          scheduled_start?: string
+          state?: string
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetups_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_personalities: {
         Row: {
           completed_at: string | null
