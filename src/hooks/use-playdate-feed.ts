@@ -194,10 +194,29 @@ export function usePlaydateFeed() {
       if (direction === "pass") return { matched: false, matchId: null, limitReached: false };
 
       /*
-       * A match requires a mutual like (CH-301). With no second live client,
-       * the counterparty's decision is modelled from the same reciprocity prior
-       * the ranker uses, resolved deterministically per pair so a pet's answer
-       * never changes between an undo and a re-swipe.
+       * A real Derp gets a real swipe row. The match is then decided by the
+       * database trigger when — and only when — the other person swipes back,
+       * so nothing is faked and no celebration fires early.
+       */
+      if (isRealPetId(card.petId) && isRealPetId(actor.pet.id) && user) {
+        void supabase.from("swipes").upsert(
+          {
+            actor_user_id: user.id,
+            actor_pet_id: actor.pet.id,
+            target_pet_id: card.petId,
+            direction,
+            score_at_impression: Math.round(card.score ?? 0),
+          },
+          { onConflict: "actor_pet_id,target_pet_id" },
+        );
+        return { matched: false, matchId: null, limitReached: false, sentToRealDerp: true };
+      }
+
+      /*
+       * Mock population only: with no second live client, the counterparty's
+       * decision is modelled from the same reciprocity prior the ranker uses,
+       * resolved deterministically per pair so a pet's answer never changes
+       * between an undo and a re-swipe.
        */
       const candidate = pool.find((p) => p.pet.id === card.petId);
       const prior = candidate?.pet.historicalRightSwipeRate ?? 0.3;
@@ -209,8 +228,9 @@ export function usePlaydateFeed() {
       const match = matchStore.createMatch(actor.pet.id, card.petId);
       return { matched: true, matchId: match.id, limitReached: false };
     },
-    [actor, pool, swipeStore, matchStore, requireAuth],
+    [actor, pool, swipeStore, matchStore, requireAuth, user],
   );
+
 
   const undo = useCallback(() => {
     if (!actor) return null;
