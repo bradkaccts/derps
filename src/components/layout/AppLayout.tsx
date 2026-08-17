@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake, MapPin, LifeBuoy, History } from "lucide-react";
+import { MessageCircle, Heart, User, PawPrint, PlusCircle, ClipboardList, Inbox, HeartHandshake, MapPin, LifeBuoy, History, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMessaging } from "@/context/MessagingContext";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { path: "/playdates", label: "Derpdates", icon: HeartHandshake },
+  { path: "/discover", label: "Discover", icon: Compass },
   { path: "/inbox", label: "Inbox", icon: MessageCircle },
   { path: "/my-derps", label: "My Derp Friends", icon: Heart },
   { path: "/profile", label: "Profile", icon: User },

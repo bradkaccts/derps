@@ -19,6 +19,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
 import PlaydatesFeed from "./pages/PlaydatesFeed";
+import Discover from "./pages/Discover";
 import PlaydateQuiz from "./pages/PlaydateQuiz";
 import PlaydateMatches from "./pages/PlaydateMatches";
 import PlaydateVenues from "./pages/PlaydateVenues";
@@ -58,6 +59,7 @@ const App = () => (
                         <Routes>
                           {/* Release 1 is Derpdates-first: the feed is home. */}
                           <Route path="/" element={<PlaydatesFeed />} />
+                          <Route path="/discover" element={<Discover />} />
                           <Route path="/auth" element={<Auth />} />
                           <Route path="/account" element={<Account />} />
                           <Route
