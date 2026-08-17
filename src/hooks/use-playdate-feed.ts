@@ -82,7 +82,10 @@ export interface SwipeOutcome {
   matched: boolean;
   matchId: string | null;
   limitReached: boolean;
+  /** The heart/boop reached a real account; a match waits on their answer. */
+  sentToRealDerp?: boolean;
 }
+
 
 /**
  * Orchestrates the Playdates stores into a working deck.
