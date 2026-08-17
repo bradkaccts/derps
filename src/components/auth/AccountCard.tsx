@@ -77,10 +77,16 @@ export function AccountCard() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Trust score</span>
-          <span className="font-bold text-primary">{profile?.trust_score ?? 50}/100</span>
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-3 py-2 text-sm">
+          <span className="font-semibold text-muted-foreground">Trust score</span>
+          <span className="font-extrabold text-primary">{profile?.trust_score ?? 50}/100</span>
         </div>
+
+        {!onAccountPage && (
+          <Button asChild variant="outline" className="w-full rounded-2xl font-bold">
+            <Link to="/account">Manage my account</Link>
+          </Button>
+        )}
 
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
