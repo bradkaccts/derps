@@ -342,14 +342,14 @@ export function MeetupProvider({ children }: { children: ReactNode }) {
     (meetupId: string, party: "a" | "b", withinGeofence: boolean) => {
       if (!withinGeofence) return;
       const at = new Date().toISOString();
-      setMeetups((prev) =>
-        prev.map((m) =>
-          m.id === meetupId ? { ...m, [party === "a" ? "checkinAAt" : "checkinBAt"]: at } : m,
-        ),
+      patchMeetup(
+        meetupId,
+        party === "a" ? { checkinAAt: at } : { checkinBAt: at },
+        party === "a" ? { checkin_a_at: at } : { checkin_b_at: at },
       );
       playdateEvents.publish({ type: "meetup.checkin", meetupId, party, withinGeofence, at });
     },
-    [setMeetups],
+    [patchMeetup],
   );
 
   const canCheckIn = useCallback(
