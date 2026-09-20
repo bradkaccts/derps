@@ -21,6 +21,10 @@ import {
 } from "maplibre-gl";
 
 import { buildStyle } from "@/map-style";
+import {
+  OPENFREEMAP_GLYPHS,
+  OPENFREEMAP_TILE_JSON,
+} from "@/map-style/variants";
 import { paletteFor } from "@/map-style/palette";
 import { type ThemeName } from "@/design-tokens/tokens";
 import {

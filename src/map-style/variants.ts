@@ -96,9 +96,11 @@ export function buildStyle(options: BuildStyleOptions): StyleSpec {
 
   if (tileUrl) {
 
-    sources[SOURCE_ID] = tileUrl.endsWith(".json")
-      ? { type: "vector", url: tileUrl, attribution }
-      : { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution };
+    // A `{z}` placeholder means a raw tile template; anything else is treated
+    // as a TileJSON document (e.g. OpenFreeMap's /planet endpoint).
+    sources[SOURCE_ID] = tileUrl.includes("{z}")
+      ? { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution }
+      : { type: "vector", url: tileUrl, attribution };
 
     layers.push(
       ...landcoverLayers(palette),
