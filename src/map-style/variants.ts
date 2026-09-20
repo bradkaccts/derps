@@ -31,11 +31,24 @@ export interface BuildStyleOptions {
   attribution?: string;
 }
 
-/** Keyless raster basemaps, tinted per variant so the map reads as a map. */
+/**
+ * Default basemap: OpenFreeMap — a keyless OpenMapTiles-compatible vector
+ * endpoint plus matching glyph ranges, so place labels render without a
+ * token. The previous default (CARTO raster) now stamps "API KEY REQUIRED"
+ * across every tile for keyless traffic.
+ */
+export const OPENFREEMAP_TILE_JSON = "https://tiles.openfreemap.org/planet";
+export const OPENFREEMAP_GLYPHS =
+  "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
+
+/**
+ * Opt-in raster basemaps (require a CARTO API key in production). MapLibre
+ * substitutes `{ratio}`, not CARTO's `{r}`.
+ */
 const RASTER_BASEMAPS: Record<ThemeName, string> = {
-  day: "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  night: "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
-  contrast: "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
+  day: "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{ratio}.png",
+  night: "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{ratio}.png",
+  contrast: "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{ratio}.png",
 };
 
 export const RASTER_SOURCE_ID = "derps-basemap-raster";
@@ -83,9 +96,11 @@ export function buildStyle(options: BuildStyleOptions): StyleSpec {
 
   if (tileUrl) {
 
-    sources[SOURCE_ID] = tileUrl.endsWith(".json")
-      ? { type: "vector", url: tileUrl, attribution }
-      : { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution };
+    // A `{z}` placeholder means a raw tile template; anything else is treated
+    // as a TileJSON document (e.g. OpenFreeMap's /planet endpoint).
+    sources[SOURCE_ID] = tileUrl.includes("{z}")
+      ? { type: "vector", tiles: [tileUrl], maxzoom: 14, attribution }
+      : { type: "vector", url: tileUrl, attribution };
 
     layers.push(
       ...landcoverLayers(palette),
