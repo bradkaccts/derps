@@ -102,7 +102,16 @@ export async function createMapLibreAdapter(
 
   const map = new MapLibreMap({
     container,
-    style: buildStyle({ variant, center: camera.center, zoom: camera.zoom }) as never,
+    style: buildStyle({
+      variant,
+      center: camera.center,
+      zoom: camera.zoom,
+      // Keyless OpenMapTiles-compatible vector basemap; the old CARTO raster
+      // fallback now watermarks every tile with "API KEY REQUIRED".
+      tileUrl: OPENFREEMAP_TILE_JSON,
+      glyphs: OPENFREEMAP_GLYPHS,
+      attribution: "© OpenStreetMap contributors, © OpenFreeMap",
+    }) as never,
     center: camera.center,
     zoom: camera.zoom,
     bearing: camera.bearing ?? 0,
@@ -111,8 +120,6 @@ export async function createMapLibreAdapter(
     // §1.3 — no globe, no terrain, no extrusions.
     maxPitch: 0,
     dragRotate: false,
-    // MAP-508 — nothing is fetched from a third party.
-    transformRequest: (url) => ({ url }),
   });
   map.touchZoomRotate.disableRotation();
   map.easeTo({ padding, duration: 0 });
