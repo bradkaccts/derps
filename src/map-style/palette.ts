@@ -151,5 +151,5 @@ export function paletteFor(variant: ThemeName): CartographicPalette {
  */
 export const typography = {
   labelFont: ["Noto Sans Regular"],
-  labelFontBold: ["Noto Sans SemiBold", "Noto Sans Regular"],
+  labelFontBold: ["Noto Sans Bold", "Noto Sans Regular"],
 } as const;
