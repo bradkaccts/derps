@@ -145,7 +145,11 @@ export function paletteFor(variant: ThemeName): CartographicPalette {
   return Object.fromEntries(entries) as CartographicPalette;
 }
 
+/**
+ * Fontstacks must exist on the configured glyphs host. OpenFreeMap (the
+ * default basemap) serves the Noto Sans family only.
+ */
 export const typography = {
-  labelFont: ["Derps Sans Regular"],
-  labelFontBold: ["Derps Sans Bold"],
+  labelFont: ["Noto Sans Regular"],
+  labelFontBold: ["Noto Sans SemiBold", "Noto Sans Regular"],
 } as const;
