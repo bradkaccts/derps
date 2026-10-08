@@ -67,15 +67,83 @@ export function VenueBrowser({
 
   // MAP-701 — results are measured from a movable search origin, so panning the
   // map somewhere else can re-run the search over there.
+  const [homeGeo, setHomeGeo] = useState(HOME_GEO);
+  const [homeLabel, setHomeLabel] = useState<string>("Ventura area (default)");
   const [searchOrigin, setSearchOrigin] = useState(HOME_GEO);
   const [camera, setCamera] = useState<Camera>({ center: MAP_ANCHOR.center, zoom: 11 });
   const [canSearchArea, setCanSearchArea] = useState(false);
   const [searching, setSearching] = useState(false);
   const [recenterNonce, setRecenterNonce] = useState(0);
+  const [zip, setZip] = useState("");
+  const [zipError, setZipError] = useState<string | null>(null);
+  const [zipLoading, setZipLoading] = useState(false);
   const lastCameraRef = useRef<Camera>(camera);
   const mapWrapRef = useRef<HTMLDivElement>(null);
   const movedFromHome =
-    searchOrigin.lat !== HOME_GEO.lat || searchOrigin.lng !== HOME_GEO.lng;
+    searchOrigin.lat !== homeGeo.lat || searchOrigin.lng !== homeGeo.lng;
+
+  const goHome = (geo: { lat: number; lng: number }, label: string) => {
+    setHomeGeo(geo);
+    setHomeLabel(label);
+    setSearchOrigin(geo);
+    setCamera({ center: [geo.lng, geo.lat], zoom: 11 });
+    setRecenterNonce((n) => n + 1);
+    setCanSearchArea(false);
+    setSearching(true);
+  };
+
+  // Default to the browser's location when the user allows it.
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        goHome({ lat: pos.coords.latitude, lng: pos.coords.longitude }, "Your current location"),
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600_000 },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const useMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setZipError("Your browser can't share its location.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setZipError(null);
+        goHome({ lat: pos.coords.latitude, lng: pos.coords.longitude }, "Your current location");
+      },
+      () => setZipError("Location access was blocked — try a ZIP code instead."),
+      { timeout: 8000 },
+    );
+  };
+
+  const submitZip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = zip.trim();
+    if (!/^\d{5}$/.test(clean)) {
+      setZipError("Enter a 5-digit ZIP code.");
+      return;
+    }
+    setZipError(null);
+    setZipLoading(true);
+    try {
+      const res = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(clean)}`);
+      if (!res.ok) throw new Error("not found");
+      const data = await res.json();
+      const place = data.places?.[0];
+      if (!place) throw new Error("not found");
+      goHome(
+        { lat: parseFloat(place.latitude), lng: parseFloat(place.longitude) },
+        `${place["place name"]}, ${place["state abbreviation"]} ${clean}`,
+      );
+    } catch {
+      setZipError("We couldn't find that ZIP code.");
+    } finally {
+      setZipLoading(false);
+    }
+  };
 
   const evaluateDrift = (cam: Camera) => {
     lastCameraRef.current = cam;
@@ -97,13 +165,8 @@ export function VenueBrowser({
   };
 
   const resetArea = () => {
-    // MAP-703 — animate back to the original focus area and drop any open
-    // tooltip or expanded cluster from wherever the user had panned to.
-    setSearchOrigin(HOME_GEO);
-    setCamera({ center: MAP_ANCHOR.center, zoom: 11 });
-    setRecenterNonce((n) => n + 1);
-    setCanSearchArea(false);
-    setSearching(true);
+    // MAP-703 — animate back to the user's home area.
+    goHome(homeGeo, homeLabel);
   };
 
   useEffect(() => {
@@ -158,6 +221,34 @@ export function VenueBrowser({
 
   return (
     <div className={cn("space-y-4", className)}>
+      <form
+        onSubmit={submitZip}
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card/50 p-3"
+      >
+        <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <LocateFixed className="h-4 w-4 text-primary" aria-hidden />
+          {homeLabel}
+        </span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label htmlFor="venue-zip" className="sr-only">ZIP code</label>
+          <input
+            id="venue-zip"
+            inputMode="numeric"
+            maxLength={5}
+            placeholder="ZIP code"
+            value={zip}
+            onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            className="h-10 w-28 rounded-full border border-border bg-background px-3 text-sm text-foreground"
+          />
+          <Button type="submit" size="sm" className="btn-bouncy h-10 rounded-full" disabled={zipLoading}>
+            {zipLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Go"}
+          </Button>
+          <Button type="button" size="sm" variant="outline" className="h-10 rounded-full" onClick={useMyLocation}>
+            Use my location
+          </Button>
+        </div>
+        {zipError && <p className="w-full text-xs font-semibold text-destructive">{zipError}</p>}
+      </form>
       <div className="space-y-3 rounded-xl border border-border bg-card/50 p-3">
         <FilterRow label="Type">
           {TYPE_OPTIONS.map((type) => (
