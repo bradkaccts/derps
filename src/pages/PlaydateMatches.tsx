@@ -21,7 +21,7 @@ import {
 } from "@/context/playdates/PlaydatesProvider";
 import { mockPlaydatePersonalities, ownerName } from "@/data/mock-playdate-pets";
 import { usePetLookup } from "@/hooks/use-pet-lookup";
-import { mockVenues } from "@/data/mock-venues";
+import { findVenue } from "@/lib/playdates/venue-store";
 import { isWithinGeofence } from "@/lib/playdates/geo";
 import { type Match } from "@/lib/playdates/types";
 import { toast } from "sonner";
@@ -75,7 +75,7 @@ const PlaydateMatches = () => {
    * or stored, which is why this returns a `boolean` and not a position.
    */
   const evaluateGeofence = useCallback(async (venueId: string): Promise<boolean> => {
-    const venue = mockVenues.find((v) => v.id === venueId);
+    const venue = findVenue(venueId);
     if (!venue) return false;
     if (typeof navigator === "undefined" || !navigator.geolocation) return true;
 

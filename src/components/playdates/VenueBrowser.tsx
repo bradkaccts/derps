@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Badge } from "@/components/ui/badge";
 
 import { cn } from "@/lib/utils";
-import { mockVenues } from "@/data/mock-venues";
+import { useVenueCatalog, discoverVenuesNear } from "@/lib/playdates/venue-store";
 import { DerpsMap } from "@/map/DerpsMap";
 import { MAP_ANCHOR, venueResultsToFeatures } from "@/map/venue-features";
 import { shouldOfferAreaSearch } from "@/lib/playdates/map-search-area";
@@ -64,6 +64,9 @@ export function VenueBrowser({
   const [hasClusters, setHasClusters] = useState(false);
   const [filters, setFilters] = useState<VenueFilters>({ types: [], amenities: [], maxMiles: 25 });
   const { attributeStates } = useVenueConfidence();
+  const catalogAll = useVenueCatalog();
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverError, setDiscoverError] = useState(false);
 
   // MAP-701 — results are measured from a movable search origin, so panning the
   // map somewhere else can re-run the search over there.
@@ -175,9 +178,21 @@ export function VenueBrowser({
     return () => window.clearTimeout(t);
   }, [searching]);
 
+  // Automatic spot discovery — cached in the backend, so repeat visits are instant.
+  useEffect(() => {
+    let cancelled = false;
+    setDiscovering(true);
+    setDiscoverError(false);
+    discoverVenuesNear(searchOrigin, 10)
+      .catch(() => { if (!cancelled) setDiscoverError(true); })
+      .finally(() => { if (!cancelled) setDiscovering(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchOrigin.lat, searchOrigin.lng]);
+
   const results = useMemo(() => {
     // MP-404 — only verified catalog venues are ever selectable.
-    const catalog = onSelect ? selectableVenues(mockVenues) : mockVenues;
+    const catalog = selectableVenues(catalogAll);
     const filtered = filterVenues(catalog, searchOrigin, filters);
     const ranked = pairTraits
       ? rankVenuesForPair(filtered, pairTraits[0], pairTraits[1])
@@ -198,7 +213,7 @@ export function VenueBrowser({
         }),
       };
     });
-  }, [filters, pairTraits, onSelect, attributeStates, searchOrigin]);
+  }, [filters, pairTraits, onSelect, attributeStates, searchOrigin, catalogAll]);
 
 
   const features = useMemo(
@@ -414,7 +429,17 @@ export function VenueBrowser({
       </p>
 
 
-      {!searching && results.length === 0 && (
+      {(discovering || discoverError) && (
+        <p className="flex items-center gap-2 rounded-xl border border-border bg-card/50 px-3 py-2 text-sm text-muted-foreground" role="status">
+          {discovering ? (
+            <><Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Finding spots near you...</>
+          ) : (
+            "We couldn't look up new spots right now — showing what we already know."
+          )}
+        </p>
+      )}
+
+      {!searching && !discovering && results.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="font-bold text-foreground">No venues match those filters</p>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -520,11 +545,19 @@ function VenueRow({
    * control nested inside a button is unreachable by keyboard, and reading the
    * evidence must never be the same gesture as choosing the venue.
    */
-  const provenance = aggregates.length > 0 && (
+  const fromMapData = venue.verificationState === "discovered";
+  const provenance = (aggregates.length > 0 || fromMapData) && (
     <details className="mt-2">
       <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground">
         What visitors say about this place
       </summary>
+      {fromMapData && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Found from public map data — details not yet confirmed by visitors.
+          {venue.amenities.length > 0 &&
+            ` Reported by map data: ${venue.amenities.map((a) => AMENITY_LABELS[a]).join(", ")}.`}
+        </p>
+      )}
       <VenueAttributeProvenance aggregates={aggregates} className="mt-1.5" />
     </details>
   );

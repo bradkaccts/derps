@@ -42,7 +42,7 @@ export interface VenueRecommendation {
 
 /** MP-404 — a meetup may only ever be created at a verified catalog venue. */
 export function selectableVenues(venues: Venue[]): Venue[] {
-  return venues.filter((v) => v.verificationState === "verified");
+  return venues.filter((v) => v.verificationState === "verified" || v.verificationState === "discovered");
 }
 
 export function filterVenues(

@@ -22,6 +22,13 @@
       "when": 1791478847853,
       "tag": "0002_tighten_derp_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791479229221,
+      "tag": "0003_create_venues_discovery",
+      "breakpoints": true
     }
   ]
 }

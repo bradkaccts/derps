@@ -478,6 +478,78 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_discovery_cells: {
+        Row: {
+          cell_key: string
+          fetched_at: string
+          venue_count: number
+        }
+        Insert: {
+          cell_key: string
+          fetched_at?: string
+          venue_count?: number
+        }
+        Update: {
+          cell_key?: string
+          fetched_at?: string
+          venue_count?: number
+        }
+        Relationships: []
+      }
+      venues: {
+        Row: {
+          amenities: string[]
+          created_at: string
+          hours: string
+          id: string
+          incident_flag_count: number
+          lat: number
+          leash_rules: string
+          lng: number
+          name: string
+          neighborhood: string
+          osm_id: string | null
+          source: string
+          venue_type: string
+          verification_state: string
+          verified_at: string | null
+        }
+        Insert: {
+          amenities?: string[]
+          created_at?: string
+          hours?: string
+          id?: string
+          incident_flag_count?: number
+          lat: number
+          leash_rules?: string
+          lng: number
+          name: string
+          neighborhood?: string
+          osm_id?: string | null
+          source?: string
+          venue_type?: string
+          verification_state?: string
+          verified_at?: string | null
+        }
+        Update: {
+          amenities?: string[]
+          created_at?: string
+          hours?: string
+          id?: string
+          incident_flag_count?: number
+          lat?: number
+          leash_rules?: string
+          lng?: number
+          name?: string
+          neighborhood?: string
+          osm_id?: string | null
+          source?: string
+          venue_type?: string
+          verification_state?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

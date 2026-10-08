@@ -458,7 +458,7 @@ export type VenueAmenity =
   | "restrooms"
   | "lighting";
 
-export type VerificationState = "verified" | "pending" | "rejected";
+export type VerificationState = "verified" | "discovered" | "pending" | "rejected";
 
 export interface Venue {
   id: string;

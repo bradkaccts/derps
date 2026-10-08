@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/config/features";
 import { currentUser } from "@/data/mock-users";
-import { mockVenues } from "@/data/mock-venues";
+import { useVenue } from "@/lib/playdates/venue-store";
 import { ownerName } from "@/data/mock-playdate-pets";
 import { scanMessage, type TextFlag } from "@/lib/playdates/safety-text";
 import {
@@ -275,7 +275,7 @@ function MessageBubble({ message, partnerName }: { message: PlaydateMessage; par
 
   if (message.card?.kind === "venue_share") {
     const sharedVenueId = message.card.venueId;
-    const venue = mockVenues.find((v) => v.id === sharedVenueId);
+    const venue = useVenue(sharedVenueId);
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-[85%] rounded-2xl border border-border bg-card p-3">

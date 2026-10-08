@@ -3,7 +3,7 @@ import { CalendarCheck, CalendarX, Clock, Download, MapPin, RefreshCw, Check } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { mockVenues } from "@/data/mock-venues";
+import { useVenue } from "@/lib/playdates/venue-store";
 import { buildMeetupICS, downloadICS } from "@/lib/playdates/calendar";
 import { isWithinCheckinWindow } from "@/lib/playdates/geo";
 import { type Meetup } from "@/lib/playdates/types";
@@ -58,7 +58,7 @@ export function MeetupCard({
   className?: string;
 }) {
   const { user } = useAuth();
-  const venue = mockVenues.find((v) => v.id === meetup.venueId);
+  const venue = useVenue(meetup.venueId);
   // Shared Derpdates carry a real account id; the demo population uses the mock user.
   const proposedByMe = meetup.proposedByUserId === (user?.id ?? currentUser.id);
   const myCheckin = proposedByMe ? meetup.checkinAAt : meetup.checkinBAt;
