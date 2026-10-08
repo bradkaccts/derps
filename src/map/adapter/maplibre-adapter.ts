@@ -22,7 +22,7 @@ import {
 } from "maplibre-gl";
 // MapLibre 6 resolves its worker relative to its own module, which the
 // production bundle never emits (404 on deploy). Ship it as a hashed asset.
-import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
 setWorkerUrl(maplibreWorkerUrl);
 

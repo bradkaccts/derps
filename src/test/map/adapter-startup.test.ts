@@ -49,7 +49,9 @@ class FakeMap {
   }
 }
 
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url", () => ({ default: "" }));
 vi.mock("maplibre-gl", () => ({
+  setWorkerUrl: () => {},
   Map: FakeMap,
   Marker: class {},
   Popup: class {},
