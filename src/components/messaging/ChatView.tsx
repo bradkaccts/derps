@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { type Message, type Conversation } from "@/data/mock-messages";
 import { useMessaging } from "@/context/MessagingContext";
 import { cn } from "@/lib/utils";
+import { VenuePicker } from "@/components/playdates/VenuePicker";
 
 interface ChatViewProps {
   conversation: Conversation;
@@ -107,12 +108,7 @@ export function ChatView({ conversation, messages }: ChatViewProps) {
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Location</label>
-              <Input
-                placeholder="Park, café, etc."
-                value={meetLocation}
-                onChange={(e) => setMeetLocation(e.target.value)}
-                className="h-9 text-sm"
-              />
+              <VenuePicker value={meetLocation} onChange={(venue) => setMeetLocation(venue.name)} />
             </div>
           </div>
           <div className="flex gap-2">
