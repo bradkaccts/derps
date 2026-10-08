@@ -15,6 +15,13 @@
       "when": 1791478078095,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791478847853,
+      "tag": "0002_tighten_derp_visibility",
+      "breakpoints": true
     }
   ]
 }
