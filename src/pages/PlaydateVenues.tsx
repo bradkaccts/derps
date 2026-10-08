@@ -32,7 +32,7 @@ const PlaydateVenues = () => {
         <div>
           <h1 className="text-2xl font-extrabold text-foreground md:text-3xl">Places to meet</h1>
           <p className="text-sm text-muted-foreground">
-            Checked, public spots around Ventura County — fenced, off-leash, small-dog areas and all.
+            Checked, public spots around your preferred area — fenced, off-leash, small-dog areas and all.
           </p>
         </div>
 
