@@ -392,6 +392,40 @@ export function VenueBrowser({
               </>
             }
           />
+          {(discovering || discoverError) && (
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-x-0 z-20 flex justify-center px-3",
+                canSearchArea || searching ? "top-16" : "top-3",
+              )}
+            >
+              <p
+                className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl border border-border bg-card/95 px-4 py-2 text-center text-sm font-semibold text-foreground shadow-md backdrop-blur"
+                role="status"
+                aria-live="polite"
+              >
+                {discovering ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden />
+                    Finding spots near you...
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
+                    The public map service is busy, so we couldn't look up new spots here yet.
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 font-bold"
+                      onClick={() => setDiscoverNonce((n) => n + 1)}
+                    >
+                      Try again
+                    </Button>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       ) : null}
 
