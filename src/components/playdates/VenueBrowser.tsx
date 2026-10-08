@@ -67,6 +67,7 @@ export function VenueBrowser({
   const catalogAll = useVenueCatalog();
   const [discovering, setDiscovering] = useState(false);
   const [discoverError, setDiscoverError] = useState(false);
+  const [discoverNonce, setDiscoverNonce] = useState(0);
 
   // MAP-701 — results are measured from a movable search origin, so panning the
   // map somewhere else can re-run the search over there.
@@ -188,7 +189,7 @@ export function VenueBrowser({
       .finally(() => { if (!cancelled) setDiscovering(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchOrigin.lat, searchOrigin.lng]);
+  }, [searchOrigin.lat, searchOrigin.lng, discoverNonce]);
 
   const results = useMemo(() => {
     // MP-404 — only verified catalog venues are ever selectable.
@@ -434,7 +435,12 @@ export function VenueBrowser({
           {discovering ? (
             <><Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Finding spots near you...</>
           ) : (
-            "We couldn't look up new spots right now — showing what we already know."
+            <>
+              The public map service is busy, so we couldn't look up new spots here yet.
+              <Button variant="link" size="sm" className="h-auto p-0 font-semibold" onClick={() => setDiscoverNonce((n) => n + 1)}>
+                Try again
+              </Button>
+            </>
           )}
         </p>
       )}

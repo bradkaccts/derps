@@ -58,23 +58,70 @@ export async function discoverVenuesNear(origin: GeoPoint, radiusMiles = 15): Pr
   const rows = (data?.venues ?? []) as Row[];
   addRows(rows);
   if (data?.upstreamFailed && rows.length === 0) {
-    // The public map service sometimes refuses server traffic; ask it from the
-    // browser instead. These spots aren't cached for other visitors.
-    const query = buildOverpassQuery(origin.lat, origin.lng, radiusMiles * 1609.34);
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(query),
-    });
-    if (!res.ok) throw new Error(`map lookup ${res.status}`);
-    const payload = await res.json();
-    const local = mapOsmElements(payload.elements ?? []).map((r) => ({
-      ...r, id: `osm:${r.osm_id}`, verified_at: null, incident_flag_count: 0,
-    }));
+    // The public map service often refuses server traffic; ask it from the
+    // browser instead and remember the answer on this device.
+    const local = await browserLookup(origin, radiusMiles);
     addRows(local);
     return local.length;
   }
   return rows.length;
+}
+
+const LOCAL_KEY = "derps.osm-cells.v1";
+const inflight = new Map<string, Promise<Row[]>>();
+
+function readLocal(): Record<string, { at: number; rows: Row[] }> {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "{}"); } catch { return {}; }
+}
+
+async function overpassWithRetry(query: string): Promise<{ elements?: unknown[] }> {
+  const mirrors = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+  ];
+  let last = "";
+  for (let i = 0; i < mirrors.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 1500 * i));
+    try {
+      const res = await fetch(mirrors[i], {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (res.ok) return await res.json();
+      last = `status ${res.status}`;
+    } catch (e) {
+      last = e instanceof Error ? e.message : String(e);
+    }
+  }
+  throw new Error(`map lookup failed: ${last}`);
+}
+
+function browserLookup(origin: GeoPoint, radiusMiles: number): Promise<Row[]> {
+  const key = `${(origin.lat).toFixed(2)}:${(origin.lng).toFixed(2)}`;
+  const cached = readLocal()[key];
+  if (cached && Date.now() - cached.at < 30 * 86_400_000) return Promise.resolve(cached.rows);
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const p = (async () => {
+    const payload = await overpassWithRetry(buildOverpassQuery(origin.lat, origin.lng, radiusMiles * 1609.34));
+    const rows: Row[] = mapOsmElements((payload.elements ?? []) as never).map((r) => ({
+      ...r, id: `osm:${r.osm_id}`, verified_at: null, incident_flag_count: 0,
+    }));
+    try {
+      const all = readLocal();
+      all[key] = { at: Date.now(), rows };
+      const keys = Object.keys(all);
+      if (keys.length > 40) delete all[keys[0]];
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
+    } catch { /* storage full — fine */ }
+    return rows;
+  })().finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
 async function fetchById(id: string) {

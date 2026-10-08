@@ -11,14 +11,12 @@ const Body = z.object({
 
 const OVERPASS_MIRRORS = [
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
-  "https://overpass.private.coffee/api/interpreter",
 ];
 
 async function queryOverpass(query: string): Promise<{ elements?: unknown[] } | null> {
   for (const url of OVERPASS_MIRRORS) {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20_000);
+    const timer = setTimeout(() => ctrl.abort(), 10_000);
     try {
       const res = await fetch(`${url}?data=${encodeURIComponent(query)}`, {
         headers: {
