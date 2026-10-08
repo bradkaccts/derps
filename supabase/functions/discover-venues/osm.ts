@@ -108,6 +108,9 @@ export function mapOsmElements(elements: OsmElement[]): DiscoveredVenueRow[] {
   for (const el of elements) {
     const row = mapOsmElement(el);
     if (!row || seen.has(row.osm_id)) continue;
+    // Long trails are split into many map segments — keep one per name.
+    if (out.some((o) => o.name === row.name && o.venue_type === row.venue_type &&
+      Math.abs(o.lat - row.lat) < 0.03 && Math.abs(o.lng - row.lng) < 0.03)) continue;
     seen.add(row.osm_id);
     out.push(row);
   }
