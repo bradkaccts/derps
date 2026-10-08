@@ -96,6 +96,10 @@ export interface CreateAdapterOptions {
   reducedMotion?: boolean;
   /** MAP-323 — hard cap on rendered venues per viewport. */
   maxRenderedVenues?: number;
+  /** Aborting tears down a half-started map immediately (unmount, StrictMode). */
+  signal?: AbortSignal;
+  /** How long to wait for the style before giving up. Default 10s. */
+  loadTimeoutMs?: number;
 }
 
 export const NO_PADDING: Padding = { top: 0, right: 0, bottom: 0, left: 0 };

@@ -91,7 +91,11 @@ export async function createMapLibreAdapter(
     padding = NO_PADDING,
     reducedMotion = false,
     maxRenderedVenues = DEFAULT_MAX_RENDERED,
+    signal,
+    loadTimeoutMs = 10_000,
   } = options;
+  if (signal?.aborted) throw new Error("Map startup aborted");
+  const t0 = performance.now();
 
   const listeners: Listeners = {
     selectVenue: new Set(),
@@ -149,7 +153,7 @@ export async function createMapLibreAdapter(
    * Source-level errors — a tile 404, a flaky basemap — are reported but are
    * never fatal: the map is still usable without a backdrop.
    * ---------------------------------------------------------------- */
-  const LOAD_TIMEOUT_MS = 10_000;
+  const LOAD_TIMEOUT_MS = loadTimeoutMs;
   let loadSettled = false;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -162,7 +166,16 @@ export async function createMapLibreAdapter(
       loadSettled = true;
       clearTimeout(loadTimer);
       map.off("error", onError);
+      signal?.removeEventListener("abort", onAbort);
       fn();
+    };
+    function onAbort() {
+      settle(() => reject(new Error("Map startup aborted")));
+    }
+    signal?.addEventListener("abort", onAbort);
+    const ready = (stage: string) => {
+      console.debug(`[map] ready on ${stage} in ${Math.round(performance.now() - t0)}ms`);
+      settle(resolve);
     };
 
     function onError(event: { error?: unknown; sourceId?: string }) {
@@ -186,17 +199,29 @@ export async function createMapLibreAdapter(
       );
     }, LOAD_TIMEOUT_MS);
 
-    if (map.loaded()) settle(resolve);
-    else map.once("load", () => settle(resolve));
+    // Ready once the style is parsed — tiles and glyphs keep streaming in
+    // afterwards, so a slow tile host no longer trips the startup deadline.
+    const styleLoaded = (map as { isStyleLoaded?: () => boolean }).isStyleLoaded?.();
+    if (map.loaded() || styleLoaded) ready("already-loaded");
+    else {
+      map.once("style.load", () => ready("style.load"));
+      map.once("load", () => ready("load"));
+    }
   }).catch((err) => {
+    console.debug(`[map] startup failed after ${Math.round(performance.now() - t0)}ms:`, err?.message);
     map.remove();
     throw err;
   });
 
-  if (destroyed) {
+  if (destroyed || signal?.aborted) {
     map.remove();
     throw new Error("Map destroyed before load completed");
   }
+
+  // Keep the canvas matched to its box so it never renders at zero size.
+  const resizeObserver =
+    typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => map.resize()) : null;
+  resizeObserver?.observe(container);
 
   map.on("error", (event) => {
     emit("error", event.error instanceof Error ? event.error : new Error("Map error"));
@@ -802,6 +827,7 @@ export async function createMapLibreAdapter(
     },
     destroy() {
       destroyed = true;
+      resizeObserver?.disconnect();
       clearTimeout(hoverTimer);
       venuePopup.remove();
       clusterExpanded = false;
