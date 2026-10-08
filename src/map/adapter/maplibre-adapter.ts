@@ -17,8 +17,14 @@ import {
   Map as MapLibreMap,
   Marker,
   Popup,
+  setWorkerUrl,
   type LngLatLike,
 } from "maplibre-gl";
+// MapLibre 6 resolves its worker relative to its own module, which the
+// production bundle never emits (404 on deploy). Ship it as a hashed asset.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+
+setWorkerUrl(maplibreWorkerUrl);
 
 import { buildStyle } from "@/map-style";
 import {
