@@ -27,9 +27,13 @@ export function useRemotePool() {
   const load = useCallback(async () => {
     setLoading(true);
 
+    // Visitors don't get exact coordinates or meetup preferences.
+    const columns = userId
+      ? PET_COLUMNS
+      : PET_COLUMNS.replace(", latitude, longitude", "");
     let petQuery = supabase
       .from("pets")
-      .select(sel(PET_COLUMNS))
+      .select(sel(columns))
       .eq("is_discoverable", true)
       .eq("safety_hold", false)
       .limit(500);
@@ -51,13 +55,15 @@ export function useRemotePool() {
         )
         .in("pet_id", ids)
         .returns<RemotePersonalityRow[]>(),
-      supabase
-        .from("pet_preferences")
-        .select(
-          sel("pet_id, max_travel_miles, preferred_meetup_types, availability_windows, hard_filters, cross_species_opt_in, intact_opt_out"),
-        )
-        .in("pet_id", ids)
-        .returns<RemotePreferenceRow[]>(),
+      userId
+        ? supabase
+            .from("pet_preferences")
+            .select(
+              sel("pet_id, max_travel_miles, preferred_meetup_types, availability_windows, hard_filters, cross_species_opt_in, intact_opt_out"),
+            )
+            .in("pet_id", ids)
+            .returns<RemotePreferenceRow[]>()
+        : Promise.resolve({ data: [] as RemotePreferenceRow[] }),
     ]);
 
     setPool(buildRemotePool(petData, personalities ?? [], preferences ?? []));
