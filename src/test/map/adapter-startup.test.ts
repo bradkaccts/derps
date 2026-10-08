@@ -113,3 +113,31 @@ describe("createMapLibreAdapter startup", () => {
     expect(map.removed).toBe(false);
   });
 });
+
+describe("createMapLibreAdapter startup — early ready & abort", () => {
+  beforeEach(() => {
+    FakeMap.instances = [];
+  });
+
+  it("resolves on style.load without waiting for every tile", async () => {
+    const promise = startAdapter();
+    await new Promise((r) => setTimeout(r, 0));
+    FakeMap.instances[0].fire("style.load");
+    await expect(promise).resolves.toBeDefined();
+  });
+
+  it("removes a half-started map when aborted", async () => {
+    const controller = new AbortController();
+    const promise = createMapLibreAdapter({
+      container: document.createElement("div"),
+      variant: "day",
+      camera: { center: [0, 0], zoom: 1 },
+      signal: controller.signal,
+    });
+    promise.catch(() => {});
+    await new Promise((r) => setTimeout(r, 0));
+    controller.abort();
+    await expect(promise).rejects.toThrow(/aborted/);
+    expect(FakeMap.instances[0].removed).toBe(true);
+  });
+});
