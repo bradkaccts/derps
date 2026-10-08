@@ -39,14 +39,17 @@ export function isCellFresh(fetchedAt: string | null | undefined, now = Date.now
   return now - new Date(fetchedAt).getTime() < CELL_TTL_DAYS * 86_400_000;
 }
 
+/**
+ * Kept deliberately light: the free Overpass servers are often overloaded and
+ * time out (504) on regex-heavy or path-scanning queries over a wide radius.
+ */
 export function buildOverpassQuery(lat: number, lng: number, radiusMeters: number): string {
-  const around = `(around:${Math.round(radiusMeters)},${lat},${lng})`;
-  return `[out:json][timeout:20];
+  const around = `(around:${Math.round(Math.min(radiusMeters, 16_000))},${lat},${lng})`;
+  return `[out:json][timeout:25];
 (
   nwr["leisure"="dog_park"]${around};
-  nwr["leisure"="park"]["dog"~"^(yes|leashed|designated|unleashed)$"]${around};
-  nwr["highway"~"^(path|footway|track)$"]["name"]["dog"~"^(yes|leashed|designated|unleashed)$"]${around};
-  nwr["natural"="beach"]["dog"~"^(yes|leashed|designated|unleashed)$"]${around};
+  nwr["leisure"="park"]["dog"]${around};
+  nwr["natural"="beach"]["dog"]${around};
 );
 out center tags 200;`;
 }
