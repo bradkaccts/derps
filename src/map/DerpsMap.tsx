@@ -88,12 +88,26 @@ export function DerpsMap({
   const [status, setStatus] = useState<
     "loading" | "ready" | "unsupported" | "failed"
   >("loading");
+  // Each attempt remounts the renderer; the first failure retries itself once
+  // with a longer deadline before the list takes over.
+  const [attempt, setAttempt] = useState(0);
+  const autoRetried = useRef(false);
+  const fail = (err: Error) => {
+    errorRef.current?.(err);
+    if (!autoRetried.current) {
+      autoRetried.current = true;
+      setAttempt((a) => a + 1);
+      return;
+    }
+    setStatus("failed");
+  };
 
 
   // Mount the renderer once. Camera/venue changes flow through imperative
   // effects below rather than a remount.
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const container = containerRef.current;
     if (!container) return;
 
@@ -104,8 +118,7 @@ export function DerpsMap({
       } catch (err) {
         // A failed chunk/worker fetch must not leave a spinner on screen.
         if (!cancelled) {
-          errorRef.current?.(err instanceof Error ? err : new Error("Map bundle failed to load"));
-          setStatus("failed");
+          fail(err instanceof Error ? err : new Error("Map bundle failed to load"));
         }
         return;
       }
@@ -123,6 +136,8 @@ export function DerpsMap({
           camera,
           padding,
           reducedMotion: prefersReducedMotion(),
+          signal: controller.signal,
+          loadTimeoutMs: attempt === 0 ? 10_000 : 20_000,
         });
         if (cancelled) {
           adapter.destroy();
@@ -136,8 +151,7 @@ export function DerpsMap({
         setStatus("ready");
       } catch (err) {
         if (!cancelled) {
-          errorRef.current?.(err instanceof Error ? err : new Error("Map failed to start"));
-          setStatus("failed");
+          fail(err instanceof Error ? err : new Error("Map failed to start"));
         }
       }
     })();
@@ -145,11 +159,12 @@ export function DerpsMap({
 
     return () => {
       cancelled = true;
+      controller.abort();
       adapterRef.current?.destroy();
       adapterRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [attempt]);
 
   useEffect(() => {
     if (status === "ready") adapterRef.current?.setVenues(venues);
@@ -201,8 +216,26 @@ export function DerpsMap({
 
   // Unsupported (no WebGL) and failed (worker/bundle/startup) both fall back to
   // the list, which is an equivalent view — never a blank canvas or a spinner.
-  if (status === "unsupported" || status === "failed") {
-    return <>{fallback}</>;
+  if (status === "unsupported") return <>{fallback}</>;
+  if (status === "failed") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 text-sm">
+          <span className="text-muted-foreground">The map is taking too long to load.</span>
+          <button
+            type="button"
+            className="rounded-full bg-primary px-4 py-2 font-bold text-primary-foreground"
+            onClick={() => {
+              setStatus("loading");
+              setAttempt((a) => a + 1);
+            }}
+          >
+            Try the map again
+          </button>
+        </div>
+        {fallback}
+      </div>
+    );
   }
 
 
