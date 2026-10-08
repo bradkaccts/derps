@@ -338,7 +338,7 @@ export function VenueBrowser({
 
 
       {view === "map" ? (
-        <div ref={mapWrapRef}>
+        <div ref={mapWrapRef} className="relative">
           <DerpsMap
             className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted"
             label={`Map of ${results.length} verified venues around your area. The same venues are listed below.`}
