@@ -1,0 +1,1 @@
+- Venue catalog: hand-checked seed venues live in code; auto-discovered OpenStreetMap spots are cached in the venues table via the discover-venues function, with a browser-side lookup fallback because the public map service often refuses cloud server traffic. Map data never confirms an amenity — only visitor check-ins do.
